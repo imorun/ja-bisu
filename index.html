@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#020912">
+  <title>J.A.R.V.I.S. // T.A.I.Y.K.I. Stark Interface</title>
+  <style>
+    :root {
+      --cyan: #36efff;
+      --cyan-soft: rgba(54,239,255,.16);
+      --cyan-faint: rgba(54,239,255,.07);
+      --text: #b7faff;
+      --muted: #5eafb9;
+      --amber: #ffd166;
+      --red: #ff647c;
+      --panel: rgba(2, 17, 29, .82);
+      --line: rgba(54,239,255,.34);
+      --mono: "Consolas", "Courier New", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #020912; color: var(--text); }
+    body { font-family: "Segoe UI", var(--mono); }
+    button, select { font: inherit; }
+    select.hud-select { min-height:39px; max-width:190px; padding:0 8px; color:var(--cyan); background:rgba(3,22,34,.95); border:1px solid rgba(54,239,255,.54); font:10px var(--mono); letter-spacing:.04em; }
+    body.taiyaki { --cyan:#c88a52; --cyan-soft:rgba(200,138,82,.18); --cyan-faint:rgba(200,138,82,.08); --text:#f5dfc5; --muted:#b58a68; --amber:#e3b06f; --line:rgba(200,138,82,.42); --panel:rgba(31,19,12,.88); }
+    body.taiyaki #container { background:radial-gradient(ellipse at 50% 48%, #3a2416 0%, #1a100a 48%, #070402 100%); }
+    body.taiyaki .grid-overlay { background-image:linear-gradient(rgba(200,138,82,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(200,138,82,.14) 1px,transparent 1px); }
+    body.taiyaki #webcam { filter:contrast(1.12) brightness(.68) saturate(.75) sepia(.28); }
+    #container { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: radial-gradient(ellipse at 50% 48%, #072533 0%, #04111d 45%, #01050b 100%); }
+    #webcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); filter: contrast(1.12) brightness(.62) saturate(.48) hue-rotate(145deg); opacity: .44; z-index: 1; transition: opacity .35s; }
+    #webcam.camera-off { opacity: 0; }
+    #hudCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; cursor: crosshair; }
+    .grid-overlay { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: .18; background-image: linear-gradient(rgba(54,239,255,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(54,239,255,.13) 1px, transparent 1px); background-size: 42px 42px; mask-image: radial-gradient(ellipse, black 15%, transparent 78%); }
+    .scanlines { position: absolute; inset: 0; z-index: 8; pointer-events: none; background: linear-gradient(transparent 50%, rgba(0,0,0,.18) 50%); background-size: 100% 4px; opacity: .36; }
+    .vignette { position: absolute; inset: 0; z-index: 7; pointer-events: none; box-shadow: inset 0 0 130px rgba(0,0,0,.92), inset 0 0 45px rgba(54,239,255,.13); }
+    .hud { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+    .corner { position: absolute; width: 65px; height: 65px; border-color: var(--cyan); border-style: solid; filter: drop-shadow(0 0 7px var(--cyan)); opacity: .85; }
+    .c-tl { top: 18px; left: 18px; border-width: 2px 0 0 2px; }
+    .c-tr { top: 18px; right: 18px; border-width: 2px 2px 0 0; }
+    .c-bl { bottom: 18px; left: 18px; border-width: 0 0 2px 2px; }
+    .c-br { bottom: 18px; right: 18px; border-width: 0 2px 2px 0; }
+    .topbar { position: absolute; left: 102px; right: 102px; top: 23px; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; text-shadow: 0 0 12px rgba(54,239,255,.55); }
+    .brand { display: flex; gap: 13px; align-items: center; min-width: 0; }
+    .brand-mark { position: relative; flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid var(--cyan); border-radius: 50%; box-shadow: 0 0 15px var(--cyan-soft), inset 0 0 12px var(--cyan-soft); }
+    .brand-mark::before, .brand-mark::after { content: ""; position: absolute; border: 1px solid var(--cyan); border-radius: 50%; inset: 7px; }
+    .brand-mark::after { inset: 15px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+    .brand h1 { font-size: clamp(14px, 1.4vw, 20px); line-height: 1.15; letter-spacing: .24em; color: #dbfdff; font-weight: 600; }
+    .brand .sub { margin-top: 5px; font-family: var(--mono); letter-spacing: .17em; color: var(--muted); font-size: 10px; }
+    .top-right { text-align: right; font: 11px/1.9 var(--mono); letter-spacing: .12em; color: #8bdce4; }
+    .status-line { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 9px currentColor; }
+    .status-dot.online { background: #65ffad; color: #65ffad; }
+    .status-dot.warning { background: var(--amber); color: var(--amber); }
+    .status-dot.error { background: var(--red); color: var(--red); }
+    .panel { position: absolute; width: 238px; padding: 14px 15px; background: linear-gradient(135deg, rgba(4,28,43,.86), rgba(1,10,19,.69)); border: 1px solid var(--line); clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%); box-shadow: inset 0 0 22px rgba(54,239,255,.035), 0 0 18px rgba(0,0,0,.2); pointer-events: auto; backdrop-filter: blur(7px); }
+    .panel::before { content: ""; position: absolute; top: 0; left: 0; width: 38px; height: 2px; background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
+    .panel-left { left: 35px; top: 128px; }
+    .panel-right { right: 35px; top: 128px; width: 262px; }
+    .panel-bottom-left { left: 35px; bottom: 104px; width: 238px; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 6px; font: 10px/1.5 var(--mono); letter-spacing: .18em; color: var(--cyan); padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(54,239,255,.2); }
+    .micro { font: 9px var(--mono); color: var(--muted); letter-spacing: .08em; }
+    .metric { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 8px 0; font: 11px var(--mono); color: #8cbbc4; }
+    .metric strong { font-size: 13px; color: #e0fcff; font-weight: 500; text-align: right; overflow-wrap: anywhere; }
+    .meter { width: 100%; height: 3px; margin-top: 5px; background: rgba(54,239,255,.12); overflow: hidden; }
+    .meter span { display: block; height: 100%; width: 0; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); transition: width .22s ease; }
+    .target-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    .target-row { width: 100%; display: grid; grid-template-columns: 27px 1fr auto; align-items: center; gap: 8px; min-height: 36px; text-align: left; color: #b7edf1; border: 1px solid rgba(54,239,255,.17); background: rgba(54,239,255,.035); padding: 6px 8px; cursor: pointer; transition: .15s; }
+    .target-row:hover, .target-row.selected { border-color: var(--cyan); background: rgba(54,239,255,.12); box-shadow: inset 2px 0 var(--cyan); }
+    .target-row.center-locked { border-color:#ff3434!important; background:rgba(255,25,25,.19)!important; box-shadow:inset 2px 0 #ff3434,0 0 12px rgba(255,25,25,.2)!important; }
+    .hud-btn.recording { color:#fff; background:#9d2525; border-color:#ff4040; }
+    body.taiyaki .hud-btn:hover, body.taiyaki .hud-btn.active { color:#170d06; }
+    body.taiyaki .panel { background:linear-gradient(135deg,rgba(48,30,18,.91),rgba(17,10,5,.82)); }
+    .target-id { color: var(--cyan); font: 10px var(--mono); }
+    .target-name { font: 10px var(--mono); letter-spacing: .07em; }
+    .target-score { font: 9px var(--mono); color: var(--muted); }
+    .empty-targets { color: #5c8b95; font: 10px/1.7 var(--mono); padding: 8px 0 4px; }
+    .log-list { display: flex; flex-direction: column; gap: 5px; max-height: 98px; overflow: hidden; }
+    .log-row { display: grid; grid-template-columns: 55px 1fr; gap: 6px; font: 9px/1.5 var(--mono); color: #7aaeb7; }
+    .log-row .log-time { color: #388b98; }
+    .log-row.warn .log-message { color: var(--amber); }
+    .log-row.error .log-message { color: var(--red); }
+    .controls { position: absolute; z-index: 10; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; width: max-content; max-width: calc(100vw - 100px); pointer-events: auto; }
+    .hud-btn { min-height: 39px; padding: 0 13px; color: var(--cyan); background: rgba(3,22,34,.9); border: 1px solid rgba(54,239,255,.54); cursor: pointer; font: 10px var(--mono); letter-spacing: .12em; box-shadow: 0 0 12px rgba(54,239,255,.06); transition: .18s; }
+    .hud-btn:hover, .hud-btn.active { color: #021018; background: var(--cyan); box-shadow: 0 0 17px rgba(54,239,255,.5); }
+    .hud-btn.warn { border-color: rgba(255,209,102,.7); color: var(--amber); }
+    .hud-btn:focus-visible, .target-row:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .bottom-readout { position: absolute; right: 35px; bottom: 98px; color: rgba(92,178,187,.73); font: 9px/1.8 var(--mono); text-align: right; letter-spacing: .14em; }
+    .bottom-readout strong { color: #a6f9ff; font-weight: 400; }
+    .boot-screen { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(3,29,43,.97), rgba(1,5,12,.985) 70%); transition: opacity .8s ease, visibility .8s ease; }
+    .boot-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    .boot-content { width: min(560px, calc(100vw - 42px)); text-align: center; }
+    .boot-reactor { width: 142px; height: 142px; margin: 0 auto 27px; position: relative; border: 1px solid rgba(54,239,255,.55); border-radius: 50%; animation: reactor-spin 12s linear infinite; box-shadow: 0 0 30px rgba(54,239,255,.13), inset 0 0 25px rgba(54,239,255,.12); }
+    .boot-reactor::before, .boot-reactor::after { content: ""; position: absolute; border: 1px dashed rgba(54,239,255,.65); border-radius: 50%; inset: 13px; }
+    .boot-reactor::after { inset: 29px; border-style: solid; border-color: rgba(54,239,255,.8); animation: reactor-spin 5s linear infinite reverse; }
+    .reactor-core { position: absolute; inset: 50px; border-radius: 50%; background: radial-gradient(circle, white 0%, var(--cyan) 24%, rgba(54,239,255,.12) 73%); box-shadow: 0 0 30px var(--cyan), 0 0 65px rgba(54,239,255,.35); animation: core-pulse 1.8s ease-in-out infinite; }
+    .boot-eyebrow { color: var(--cyan); font: 10px var(--mono); letter-spacing: .45em; margin-bottom: 12px; }
+    .boot-title { color: #e5fdff; font-size: clamp(24px, 4vw, 38px); font-weight: 300; letter-spacing: .22em; text-shadow: 0 0 24px rgba(54,239,255,.5); }
+    .boot-subtitle { margin-top: 9px; color: #60aab7; font: 10px var(--mono); letter-spacing: .27em; }
+    .boot-log { height: 83px; overflow: hidden; margin: 27px 0 18px; text-align: left; color: #6caab2; font: 10px/1.8 var(--mono); border-left: 1px solid rgba(54,239,255,.3); padding-left: 13px; }
+    .boot-line.active { color: #d4fbff; }
+    .boot-progress-head { display: flex; justify-content: space-between; font: 9px var(--mono); letter-spacing: .17em; color: #73bdc7; margin-bottom: 7px; }
+    .boot-progress { height: 3px; background: rgba(54,239,255,.15); }
+    .boot-progress span { display: block; width: 0; height: 100%; background: var(--cyan); box-shadow: 0 0 15px var(--cyan); transition: width .2s ease; }
+    .boot-skip { margin-top: 25px; color: #4a9eaa; background: transparent; border: 0; border-bottom: 1px solid rgba(54,239,255,.3); padding: 6px 12px; cursor: pointer; font: 9px var(--mono); letter-spacing: .2em; }
+    .boot-skip:hover { color: white; }
+    .toast { position: absolute; z-index: 15; left: 50%; top: 92px; transform: translate(-50%, -12px); opacity: 0; padding: 10px 15px; border: 1px solid var(--line); background: rgba(1,15,24,.94); color: var(--cyan); font: 10px var(--mono); letter-spacing: .1em; transition: .2s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .effects-off .scanlines, .effects-off .grid-overlay { opacity: 0; }
+    .camera-error { color: var(--red) !important; }
+    .hud-btn.recording { color: #fff; background: rgba(255,65,91,.9); border-color: #ff647c; box-shadow: 0 0 18px rgba(255,65,91,.38); animation: record-pulse 1.2s ease-in-out infinite; }
+    .hud-btn.holo-active { box-shadow: inset 0 0 12px var(--cyan-soft), 0 0 12px var(--cyan-soft); }
+    @keyframes record-pulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+    @keyframes reactor-spin { to { transform: rotate(360deg); } }
+    @keyframes core-pulse { 0%,100% { transform: scale(.85); opacity: .78; } 50% { transform: scale(1.08); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    @media (max-width: 1000px) {
+      .panel { width: 205px; padding: 11px; }
+      .panel-right { width: 220px; }
+      .panel-left { left: 22px; }
+      .panel-right { right: 22px; }
+      .panel-bottom-left { left: 22px; }
+      .bottom-readout { right: 22px; }
+      .controls { max-width: calc(100vw - 60px); }
+      .hud-btn { padding: 0 10px; }
+    }
+    @media (max-width: 700px) {
+      .corner { width: 33px; height: 33px; }
+      .c-tl { top: 10px; left: 10px; } .c-tr { top: 10px; right: 10px; }
+      .c-bl { bottom: 10px; left: 10px; } .c-br { bottom: 10px; right: 10px; }
+      .topbar { top: 17px; left: 54px; right: 54px; gap: 8px; }
+      .brand { gap: 8px; } .brand-mark { flex-basis: 28px; width: 28px; height: 28px; }
+      .brand-mark::before { inset: 5px; } .brand-mark::after { inset: 11px; }
+      .brand h1 { font-size: 13px; letter-spacing: .12em; } .brand .sub { font-size: 8px; letter-spacing: .08em; }
+      .top-right { font-size: 8px; line-height: 1.6; }
+      .panel-left { top: 86px; left: 14px; width: 165px; }
+      .panel-right { top: 86px; right: 14px; width: 170px; }
+      .panel-bottom-left { left: 14px; bottom: 122px; width: 165px; }
+      .panel-title { font-size: 8px; padding-bottom: 7px; margin-bottom: 7px; }
+      .metric { font-size: 9px; margin: 6px 0; } .metric strong { font-size: 10px; }
+      .target-list { max-height: 125px; }
+      .target-row { grid-template-columns: 20px 1fr auto; gap: 4px; padding: 5px; min-height: 30px; }
+      .target-name { font-size: 8px; } .target-score { font-size: 8px; }
+      .log-list { max-height: 72px; } .log-row { grid-template-columns: 40px 1fr; font-size: 8px; }
+      .bottom-readout { display: none; }
+      .controls { left: 12px; right: 12px; bottom: 17px; transform: none; width: auto; max-width: none; gap: 6px; }
+      .hud-btn { flex: 1 1 28%; min-height: 35px; padding: 0 4px; font-size: 8px; letter-spacing: .04em; }
+    }
+    @media (max-width: 390px) {
+      .panel-left { width: 145px; left: 9px; } .panel-right { width: 148px; right: 9px; }
+      .panel-bottom-left { width: 145px; left: 9px; }
+      .topbar { left: 45px; right: 45px; } .brand h1 { font-size: 11px; }
+      .brand .sub { font-size: 7px; }
+    }
+  </style>
+  <!-- A single MediaPipe runtime handles face landmarks and iris estimation. -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <main id="container">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="hudCanvas" aria-label="顔検出とターゲット選択エリア"></canvas>
+    <div class="grid-overlay"></div>
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <section class="hud" aria-label="JARVIS / T.A.I.Y.K.I. HUD">
+      <div class="corner c-tl"></div><div class="corner c-tr"></div><div class="corner c-bl"></div><div class="corner c-br"></div>
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div><h1 id="system-name">J.A.R.V.I.S.</h1><div id="system-sub" class="sub">STARK INDUSTRIES // MK-85</div></div>
+        </div>
+        <div class="top-right">
+          <div class="status-line"><span id="status-dot" class="status-dot"></span><span id="sys-status">BOOT SEQUENCE</span></div>
+          <div id="clock-display">00:00:00 JST</div>
+          <div id="date-display">SYSTEM DATE --</div>
+        </div>
+      </header>
+
+      <section class="panel panel-left">
+        <div class="panel-title"><span>01 // SYSTEM DIAGNOSTICS</span><span class="micro">LIVE</span></div>
+        <div class="metric"><span>OPTICAL SENSOR</span><strong id="camera-state">STANDBY</strong></div>
+        <div class="meter"><span id="camera-meter"></span></div>
+        <div class="metric"><span>NEURAL CORE</span><strong id="ai-state">LOADING</strong></div>
+        <div class="meter"><span id="ai-meter"></span></div>
+        <div class="metric"><span>RENDER RATE</span><strong id="fps-display">-- FPS</strong></div>
+        <div class="metric"><span>VIDEO INPUT</span><strong id="resolution-display">-- × --</strong></div>
+        <div class="metric"><span>DETECTOR SCORE</span><strong id="confidence-display">--</strong></div>
+      </section>
+
+      <section class="panel panel-right">
+        <div class="panel-title"><span>02 // TARGET REGISTER</span><span id="target-count" class="micro">0 FOUND</span></div>
+        <div id="target-list" class="target-list"><div class="empty-targets">SEARCHING FOR BIOLOGICAL SIGNATURES...</div></div>
+        <div class="metric"><span>LOCK STATUS</span><strong id="lock-state">UNLOCKED</strong></div>
+      </section>
+
+      <section class="panel panel-bottom-left">
+        <div class="panel-title"><span>03 // EVENT LOG</span><span class="micro">SYS</span></div>
+        <div id="log-list" class="log-list" aria-live="polite"></div>
+      </section>
+      <div class="bottom-readout">STARK SYSTEMS / LOCAL VISION MODULE<br><strong id="engine-state">BLAZEFACE // FACE DETECTION</strong><br>GAZE <strong id="gaze-state">WAITING FOR FACE</strong><br>MOTION <strong id="motion-state">STANDBY</strong><br>RECORD <strong id="record-state">OFF</strong><br>LOCAL PROCESSING // FACE PROFILES STORED IN THIS BROWSER</div>
+    </section>
+
+    <nav class="controls" aria-label="操作">
+      <button class="hud-btn" id="mode-btn" type="button" title="JARVIS / T.A.I.Y.K.I. 切替">MODE: JARVIS</button>
+      <select class="hud-select" id="camera-select" aria-label="カメラ選択" title="カメラ切り替え"><option value="">CAMERA INPUT</option></select>
+      <button class="hud-btn" id="voice-btn" type="button" title="音声アナウンス切替">VOICE: OFF</button>
+      <button class="hud-btn" id="lock-btn" type="button" title="選択した顔をロック">LOCK TARGET</button>
+      <button class="hud-btn" id="register-face-btn" type="button" title="選択した顔に名前を付けてこのブラウザーに保存">REGISTER FACE</button>
+      <button class="hud-btn" id="camera-btn" type="button" title="カメラ停止/再開">CAMERA: ON</button>
+      <button class="hud-btn" id="effects-btn" type="button" title="スキャンエフェクト切替">EFFECTS: ON</button>
+      <button class="hud-btn" id="snapshot-btn" type="button" title="現在のカメラ画像を保存">SNAPSHOT</button>
+      <button class="hud-btn" id="filter-btn" type="button" title="カメラ映像フィルター切替">FILTER: HUD</button>
+      <button class="hud-btn active" id="gaze-btn" type="button" title="視線推定表示のON/OFF">GAZE: ON</button>
+      <button class="hud-btn" id="gaze-cal-btn" type="button" title="画面中央を見て視線を校正">GAZE CAL</button>
+      <button class="hud-btn active" id="predict-btn" type="button" title="顔の移動方向を予測">PREDICT: ON</button>
+      <button class="hud-btn active holo-active" id="holo-btn" type="button" title="顔のホログラム演出">HOLO: ON</button>
+      <button class="hud-btn" id="record-btn" type="button" title="顔位置・視線・移動データの記録開始／保存">RECORD: OFF</button>
+      <button class="hud-btn" id="fullscreen-btn" type="button" title="全画面表示">FULLSCREEN</button>
+      <button class="hud-btn" id="reset-btn" type="button" title="HUDを再起動">REBOOT</button>
+    </nav>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <section id="boot-screen" class="boot-screen" aria-label="起動シーケンス">
+      <div class="boot-content">
+        <div class="boot-reactor" aria-hidden="true"><div class="reactor-core"></div></div>
+        <div class="boot-eyebrow">STARK INDUSTRIES PRESENTS</div>
+        <div class="boot-title">J.A.R.V.I.S.</div>
+        <div class="boot-subtitle">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+        <div id="boot-log" class="boot-log" aria-live="polite"></div>
+        <div class="boot-progress-head"><span id="boot-stage">INITIALIZING INTERFACE</span><span id="boot-percent">00%</span></div>
+        <div class="boot-progress"><span id="boot-bar"></span></div>
+        <button id="skip-boot" class="boot-skip" type="button">SKIP INTRO // CONTINUE TO HUD</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    'use strict';
+    const $ = (id) => document.getElementById(id);
+    const video = $('webcam');
+    const canvas = $('hudCanvas');
+    const ctx = canvas.getContext('2d');
+    const ui = {
+      status: $('sys-status'), statusDot: $('status-dot'), clock: $('clock-display'), date: $('date-display'),
+      cameraState: $('camera-state'), cameraMeter: $('camera-meter'), aiState: $('ai-state'), aiMeter: $('ai-meter'),
+      fps: $('fps-display'), resolution: $('resolution-display'), confidence: $('confidence-display'),
+      count: $('target-count'), targetList: $('target-list'), lockState: $('lock-state'), log: $('log-list'),
+      voiceBtn: $('voice-btn'), lockBtn: $('lock-btn'), registerFaceBtn: $('register-face-btn'), cameraBtn: $('camera-btn'), effectsBtn: $('effects-btn'),
+      modeBtn: $('mode-btn'), cameraSelect: $('camera-select'), snapshotBtn: $('snapshot-btn'), filterBtn: $('filter-btn'),
+      fullBtn: $('fullscreen-btn'), resetBtn: $('reset-btn'), boot: $('boot-screen'), bootLog: $('boot-log'),
+      bootStage: $('boot-stage'), bootPercent: $('boot-percent'), bootBar: $('boot-bar'), skipBoot: $('skip-boot'), toast: $('toast'),
+      gazeState: $('gaze-state'), motionState: $('motion-state'), recordState: $('record-state'),
+      gazeBtn: $('gaze-btn'), gazeCalBtn: $('gaze-cal-btn'), predictBtn: $('predict-btn'), holoBtn: $('holo-btn'), recordBtn: $('record-btn')
+    };
+
+    let model = null, gazeModel = null, stream = null, cameraOn = false, cameraState = 'PENDING', aiState = 'PENDING';
+    let predictions = [], detectedBoxes = [], selectedIndex = -1, locked = false, lockedCenter = null;
+    let lockLostFrames = 0, detectionBusy = false, lastDetection = 0, lastCount = -1;
+    let gazeDetectionBusy = false, lastGazeDetection = 0, gazeFaces = [], activeGaze = null;
+    let gazeEnabled = true, predictionEnabled = true, hologramEnabled = true;
+    let gazeBaseline = { x: .5, y: .5 }, gazeCalibrated = false;
+    let movementSamples = [], motionPrediction = null;
+    let recording = false, recordingStartedAt = null, recordingStartedPerf = 0, trackingRecords = [], lastRecordAt = 0;
+    let voiceOn = false, effectsOn = true, hudAngle = 0, fpsFrames = 0, lastFpsAt = performance.now();
+    let assistantMode = 'JARVIS', cameraDeviceId = '', filterMode = 0;
+    let faceProfiles = loadFaceProfiles(), identityByIndex = [];
+    let lastGoodFacesAt = 0, lastGoodPredictions = [];
+    let toastTimer = null, lastSpokenAt = 0, bootStart = performance.now(), bootHidden = false, initStarted = false;
+    let bootLines = [], lastBootLine = -1, logEntries = [];
+    const screenW = () => window.innerWidth;
+    const screenH = () => window.innerHeight;
+
+    function setStatus(text, type = 'normal') {
+      ui.status.textContent = text.toUpperCase();
+      ui.statusDot.className = 'status-dot' + (type === 'online' ? ' online' : type === 'error' ? ' error' : type === 'warning' ? ' warning' : '');
+    }
+    function updateMeters() {
+      ui.cameraState.textContent = cameraState === 'READY' ? 'ONLINE' : cameraState === 'OFF' ? 'OFFLINE' : cameraState === 'ERROR' ? 'ERROR' : 'WAITING';
+      ui.cameraState.className = cameraState === 'ERROR' ? 'camera-error' : '';
+      ui.cameraMeter.style.width = cameraState === 'READY' ? '100%' : cameraState === 'OFF' ? '0%' : cameraState === 'ERROR' ? '28%' : '45%';
+      ui.aiState.textContent = aiState === 'READY' ? 'ONLINE' : aiState === 'ERROR' ? 'ERROR' : 'LOADING';
+      ui.aiMeter.style.width = aiState === 'READY' ? '100%' : aiState === 'ERROR' ? '28%' : '52%';
+    }
+    function log(message, type = 'normal') {
+      const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+      logEntries.unshift({ time, message, type });
+      logEntries = logEntries.slice(0, 5);
+      ui.log.replaceChildren();
+      for (const entry of logEntries) {
+        const row = document.createElement('div'); row.className = `log-row ${entry.type === 'warning' ? 'warn' : entry.type === 'error' ? 'error' : ''}`;
+        const t = document.createElement('span'); t.className = 'log-time'; t.textContent = entry.time;
+        const m = document.createElement('span'); m.className = 'log-message'; m.textContent = entry.message;
+        row.append(t, m); ui.log.append(row);
+      }
+    }
+    function notify(message) {
+      ui.toast.textContent = message;
+      ui.toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => ui.toast.classList.remove('show'), 2300);
+    }
+    function speak(message, force = false) {
+      if (!voiceOn || !('speechSynthesis' in window)) return;
+      const now = Date.now();
+      if (!force && now - lastSpokenAt < 3000) return;
+      lastSpokenAt = now;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'en-GB'; utterance.pitch = 0.84; utterance.rate = 0.94; utterance.volume = 0.9;
+        window.speechSynthesis.speak(utterance);
+      } catch (error) { console.warn('Speech synthesis error', error); }
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(screenW() * dpr));
+      canvas.height = Math.max(1, Math.round(screenH() * dpr));
+      canvas.style.width = `${screenW()}px`; canvas.style.height = `${screenH()}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function addBootLine(message, active = false) {
+      bootLines.push({ message, active });
+      bootLines = bootLines.slice(-4);
+      ui.bootLog.replaceChildren();
+      bootLines.forEach((item, index) => {
+        const line = document.createElement('div'); line.className = 'boot-line' + ((active && index === bootLines.length - 1) ? ' active' : '');
+        line.textContent = `> ${item.message}`; ui.bootLog.append(line);
+      });
+    }
+    const bootScript = [
+      'POWERING STARK INTERFACE...', 'CHECKING DISPLAY MATRIX... OK', 'CALIBRATING OPTICAL ARRAY...',
+      'INITIALIZING NEURAL CORE...', 'ESTABLISHING LOCAL VISION PIPELINE...', 'RUNNING SYSTEM DIAGNOSTICS...',
+      'AWAITING SENSOR AND MODEL RESPONSE...'
+    ];
+    function tickBoot() {
+      if (bootHidden) return;
+      const elapsed = performance.now() - bootStart;
+      const lineIndex = Math.min(bootScript.length - 1, Math.floor(elapsed / 550));
+      if (lineIndex !== lastBootLine) { lastBootLine = lineIndex; addBootLine(bootScript[lineIndex], true); }
+      const allSettled = cameraState !== 'PENDING' && aiState !== 'PENDING';
+      const pct = allSettled ? (elapsed < 1800 ? Math.min(96, Math.floor(elapsed / 19)) : 100) : Math.min(94, Math.floor(elapsed / 75));
+      ui.bootBar.style.width = `${pct}%`; ui.bootPercent.textContent = `${String(pct).padStart(2, '0')}%`;
+      ui.bootStage.textContent = allSettled ? 'SYSTEM CHECK COMPLETE' : lineIndex < 3 ? 'INITIALIZING INTERFACE' : 'CALIBRATING SYSTEMS';
+      if (allSettled && elapsed > 2300) {
+        ui.bootBar.style.width = '100%'; ui.bootPercent.textContent = '100%';
+        addBootLine(cameraState === 'READY' && aiState === 'READY' ? 'ALL SYSTEMS NOMINAL.' : 'PARTIAL SYSTEM // CHECK DIAGNOSTICS.', true);
+        setTimeout(hideBoot, 700);
+        return;
+      }
+      requestAnimationFrame(tickBoot);
+    }
+    function hideBoot() {
+      if (bootHidden) return;
+      bootHidden = true; ui.boot.classList.add('hide');
+    }
+    ui.skipBoot.addEventListener('click', hideBoot);
+
+    async function refreshCameraList() {
+      if (!navigator.mediaDevices?.enumerateDevices) return;
+      try {
+        const devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+        const current = cameraDeviceId || ui.cameraSelect.value;
+        ui.cameraSelect.replaceChildren();
+        devices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.textContent = device.label || `CAMERA ${String(index + 1).padStart(2, '0')}`;
+          ui.cameraSelect.append(option);
+        });
+        if (current && devices.some(d => d.deviceId === current)) ui.cameraSelect.value = current;
+        else if (devices.length && !cameraDeviceId) ui.cameraSelect.value = devices[0].deviceId;
+      } catch (error) { console.warn('Camera enumeration failed', error); }
+    }
+
+    async function startCamera(requestedDeviceId = '') {
+      cameraState = 'PENDING'; updateMeters();
+      if (!navigator.mediaDevices?.getUserMedia) {
+        cameraState = 'ERROR'; updateMeters(); throw new Error('Camera API unavailable. Open from localhost or HTTPS.');
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { ...(requestedDeviceId ? { deviceId: { exact: requestedDeviceId } } : { facingMode: 'user' }), width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } }
+        });
+        video.srcObject = stream;
+        await new Promise((resolve, reject) => {
+          if (video.readyState >= 1) return resolve();
+          const timer = setTimeout(() => reject(new Error('Camera metadata timeout.')), 12000);
+          video.onloadedmetadata = () => { clearTimeout(timer); resolve(); };
+          video.onerror = () => { clearTimeout(timer); reject(new Error('Unable to read camera stream.')); };
+        });
+        await video.play();
+        cameraOn = true; cameraState = 'READY'; cameraDeviceId = stream.getVideoTracks()[0]?.getSettings?.().deviceId || requestedDeviceId || ''; video.classList.remove('camera-off');
+        await refreshCameraList(); if (cameraDeviceId) ui.cameraSelect.value = cameraDeviceId;
+        ui.cameraBtn.textContent = 'CAMERA: ON'; ui.cameraBtn.classList.add('active');
+        ui.resolution.textContent = `${video.videoWidth} × ${video.videoHeight}`;
+        updateMeters(); log('OPTICAL SENSOR ONLINE');
+        setStatus(model ? 'SYSTEMS NOMINAL' : 'OPTICAL SENSOR ONLINE', model ? 'online' : 'normal');
+        return true;
+      } catch (error) {
+        cameraOn = false; cameraState = 'ERROR'; updateMeters(); log('CAMERA ACCESS FAILED', 'error');
+        setStatus('CAMERA ACCESS ERROR', 'error');
+        throw error;
+      }
+    }
+    function stopCamera() {
+      if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+      video.srcObject = null; cameraOn = false; cameraState = 'OFF'; predictions = []; detectedBoxes = [];
+      gazeFaces = []; activeGaze = null; motionPrediction = null; movementSamples = [];
+      ui.gazeState.textContent = 'STANDBY'; ui.motionState.textContent = 'STANDBY';
+      video.classList.add('camera-off'); ui.cameraBtn.textContent = 'CAMERA: OFF'; ui.cameraBtn.classList.remove('active');
+      ui.resolution.textContent = '-- × --'; updateMeters(); updateTargetList();
+      log('OPTICAL SENSOR STANDBY'); setStatus('CAMERA STANDBY', 'warning');
+    }
+    // Keep all legacy MediaPipe WASM/data assets inside the one Face Mesh package.
+    // Do not load @mediapipe/face_detection on this page: both legacy solutions use
+    // a global Emscripten Module and can overwrite each other's runtime state.
+    function resolveMediaPipeAsset(file) {
+      const filename = String(file || '').split(/[\\/]/).pop();
+      return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/' + filename;
+    }
+
+    function adaptMediaPipeMeshDetections(results) {
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return [];
+      return (results?.multiFaceLandmarks || []).map((landmarks) => {
+        if (!landmarks || landmarks.length < 20) return null;
+        const xs = landmarks.map(p => p?.x).filter(Number.isFinite);
+        const ys = landmarks.map(p => p?.y).filter(Number.isFinite);
+        if (!xs.length || !ys.length) return null;
+        const minX = clamp(Math.min(...xs) - .025, 0, 1);
+        const maxX = clamp(Math.max(...xs) + .025, 0, 1);
+        const minY = clamp(Math.min(...ys) - .035, 0, 1);
+        const maxY = clamp(Math.max(...ys) + .035, 0, 1);
+        const left = minX * vw, top = minY * vh;
+        const width = (maxX - minX) * vw, height = (maxY - minY) * vh;
+        if (![left, top, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return null;
+        // Face Mesh doesn't expose a detection confidence score in this callback.
+        // The fixed value is an availability marker, not a calibrated confidence.
+        return { topLeft: [left, top], bottomRight: [left + width, top + height], probability: [0.95] };
+      }).filter(Boolean);
+    }
+
+    function boxFor(prediction) {
+      if (!video.videoWidth || !video.videoHeight) return { x: 0, y: 0, w: 0, h: 0, cx: 0, cy: 0 };
+      const left = prediction.topLeft[0], top = prediction.topLeft[1];
+      const bw = prediction.bottomRight[0] - left, bh = prediction.bottomRight[1] - top;
+      // Match the object-fit:cover crop and the mirrored webcam display.
+      const scale = Math.max(screenW() / video.videoWidth, screenH() / video.videoHeight);
+      const offsetX = (screenW() - video.videoWidth * scale) / 2;
+      const offsetY = (screenH() - video.videoHeight * scale) / 2;
+      const w = bw * scale, h = bh * scale;
+      const x = screenW() - (offsetX + (left + bw) * scale);
+      const y = offsetY + top * scale;
+      return { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
+    }
+    function scoreFor(prediction) {
+      const p = prediction?.probability?.[0];
+      return Number.isFinite(p) ? Math.max(0, Math.min(1, p)) : null;
+    }
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const FACE_PATHS = [
+      [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10],
+      [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246,33],
+      [362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398,362],
+      [70,63,105,66,107], [336,296,334,293,300],
+      [168,6,197,195,5,4,1,19,94,2],
+      [61,146,91,181,84,17,314,405,321,375,291],
+      [78,95,88,178,87,14,317,402,318,324,308]
+    ];
+
+    function videoPointToScreen(point) {
+      if (!video.videoWidth || !video.videoHeight || !point) return { x: 0, y: 0 };
+      const scale = Math.max(screenW() / video.videoWidth, screenH() / video.videoHeight);
+      const offsetX = (screenW() - video.videoWidth * scale) / 2;
+      const offsetY = (screenH() - video.videoHeight * scale) / 2;
+      return { x: screenW() - (offsetX + point.x * video.videoWidth * scale), y: offsetY + point.y * video.videoHeight * scale };
+    }
+
+    function eyeRatios(landmarks, irisIndex, cornerA, cornerB, lidA, lidB) {
+      const iris = landmarks[irisIndex], a = landmarks[cornerA], b = landmarks[cornerB];
+      const upper = landmarks[lidA], lower = landmarks[lidB];
+      if (!iris || !a || !b || !upper || !lower) return null;
+      const minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x);
+      const minY = Math.min(upper.y, lower.y), maxY = Math.max(upper.y, lower.y);
+      if (maxX - minX < .001 || maxY - minY < .001) return null;
+      return { x: clamp((iris.x - minX) / (maxX - minX), 0, 1), y: clamp((iris.y - minY) / (maxY - minY), 0, 1) };
+    }
+
+    function gazeFromLandmarks(landmarks) {
+      // The refined iris points estimate eye direction; this is not calibrated eye-tracking hardware.
+      const a = eyeRatios(landmarks, 468, 33, 133, 159, 145);
+      const b = eyeRatios(landmarks, 473, 362, 263, 386, 374);
+      if (!a || !b) return null;
+      return { x: clamp(1 - (a.x + b.x) / 2, 0, 1), y: clamp((a.y + b.y) / 2, 0, 1) };
+    }
+
+    const FACE_PROFILE_KEY = 'taiyaki_face_profiles_v1';
+    const FACE_DESCRIPTOR_POINTS = [1,10,33,133,152,263,362,234,454,127,356,168,6,197,5,4,13,14,61,291,70,300,105,334,159,145,386,374];
+    function loadFaceProfiles() {
+      try { const v = JSON.parse(localStorage.getItem('taiyaki_face_profiles_v1') || '[]'); return Array.isArray(v) ? v : []; }
+      catch (_) { return []; }
+    }
+    function saveFaceProfiles() {
+      try { localStorage.setItem(FACE_PROFILE_KEY, JSON.stringify(faceProfiles)); return true; }
+      catch (e) { console.warn('Could not save face profile', e); notify('LOCAL STORAGE FULL / PROFILE NOT SAVED'); return false; }
+    }
+    // Geometry-based descriptor only; this is a lightweight personal matching aid, not secure biometric identification.
+    function faceDescriptor(landmarks) {
+      if (!landmarks || FACE_DESCRIPTOR_POINTS.some(i => !landmarks[i])) return null;
+      const left=landmarks[33], right=landmarks[263], nose=landmarks[1] || landmarks[4];
+      const scale=Math.max(.025, Math.hypot(right.x-left.x,right.y-left.y));
+      return FACE_DESCRIPTOR_POINTS.flatMap(i => {
+        const p=landmarks[i]; return [(p.x-nose.x)/scale,(p.y-nose.y)/scale,((p.z||0)-(nose.z||0))/scale];
+      });
+    }
+    function descriptorDistance(a,b) {
+      if (!a || !b || a.length!==b.length) return Infinity;
+      let sum=0; for(let i=0;i<a.length;i++){ const d=a[i]-b[i]; sum+=d*d; }
+      return Math.sqrt(sum/a.length);
+    }
+    function identifyFace(landmarks) {
+      const descriptor=faceDescriptor(landmarks); if(!descriptor || !faceProfiles.length) return null;
+      let best=null, dist=Infinity;
+      for(const profile of faceProfiles){
+        const d=descriptorDistance(descriptor,profile.descriptor);
+        if(d<dist){dist=d;best=profile;}
+      }
+      // Threshold is intentionally conservative; face angle/lighting can change the geometry significantly.
+      return best && dist < 0.19 ? {id:best.id,name:best.name, distance:dist} : null;
+    }
+    function registerSelectedFace() {
+      const index=selectedIndex;
+      const box=index>=0 ? detectedBoxes[index] : null;
+      const face=matchedMeshForBox(box);
+      if(!face?.landmarks){notify('顔を正面〜斜め向きで検出してから登録してね');return;}
+      const descriptor=faceDescriptor(face.landmarks);
+      if(!descriptor){notify('顔特徴を取得できませんでした');return;}
+      const suggested=face.identity?.name || `FACE-${String(faceProfiles.length+1).padStart(2,'0')}`;
+      const name=prompt('この顔につける名前を入力してください（例：Cookie）',suggested);
+      if(name===null)return;
+      const clean=name.trim().slice(0,32); if(!clean){notify('名前が空です');return;}
+      const existing=faceProfiles.find(p=>p.name.toLowerCase()===clean.toLowerCase());
+      if(existing){
+        if(!confirm(`「${clean}」の顔データを更新しますか？`))return;
+        existing.descriptor=descriptor; existing.updatedAt=new Date().toISOString();
+      } else faceProfiles.push({id:`face-${Date.now()}`,name:clean,descriptor,createdAt:new Date().toISOString()});
+      if(saveFaceProfiles()){log(`FACE PROFILE SAVED: ${clean}`);notify(`FACE REGISTERED: ${clean}`);updateTargetList();}
+    }
+
+    function onGazeResults(results) {
+      if (!cameraOn || !video.videoWidth || !video.videoHeight) {
+        gazeFaces = []; activeGaze = null;
+        if (cameraOn) handlePredictions([]);
+        return;
+      }
+      const incomingFaces = (results?.multiFaceLandmarks || []).map((landmarks) => {
+        const gaze = gazeFromLandmarks(landmarks);
+        const nose = videoPointToScreen(landmarks[1] || landmarks[4] || landmarks[0]);
+        return { landmarks, nose, gaze, identity: identifyFace(landmarks) };
+      }).filter(face => face.nose);
+      const incoming = adaptMediaPipeMeshDetections(results);
+      // Briefly keep the last boxes while a profile turns sideways or the mesh drops a frame.
+      // This is tracking continuity, not a guarantee that every profile can be detected.
+      if (incoming.length) {
+        gazeFaces = incomingFaces; lastGoodFacesAt = performance.now(); lastGoodPredictions = incoming;
+        handlePredictions(incoming);
+      } else if (locked && performance.now() - lastGoodFacesAt < 650 && lastGoodPredictions.length) {
+        gazeFaces = gazeFaces.map(face => ({...face, stale:true}));
+        handlePredictions(lastGoodPredictions);
+      } else {
+        gazeFaces = []; handlePredictions([]);
+      }
+      updateActiveGaze();
+    }
+
+    function matchedMeshForBox(box) {
+      if (!box || !gazeFaces.length) return null;
+      let best = null, distance = Infinity;
+      for (const face of gazeFaces) {
+        const d = Math.hypot(face.nose.x - box.cx, face.nose.y - box.cy);
+        if (d < distance) { best = face; distance = d; }
+      }
+      return best;
+    }
+
+    function gazeLabel(gaze) {
+      if (!gaze) return 'NO IRIS DATA';
+      const baseline = gazeBaseline || { x: .5, y: .5 };
+      const dx = gaze.x - baseline.x, dy = gaze.y - baseline.y;
+      const horizontal = dx > .045 ? 'RIGHT' : dx < -.045 ? 'LEFT' : 'CENTER';
+      const vertical = dy < -.055 ? 'UP' : dy > .055 ? 'DOWN' : 'LEVEL';
+      return `${horizontal} / ${vertical}`;
+    }
+
+    function updateActiveGaze() {
+      const box = selectedIndex >= 0 ? detectedBoxes[selectedIndex] : null;
+      const face = matchedMeshForBox(box) || gazeFaces[0] || null;
+      activeGaze = face?.gaze ? { x: face.gaze.x, y: face.gaze.y, landmarks: face.landmarks, nose: face.nose, at: performance.now() } : null;
+      ui.gazeState.textContent = gazeEnabled ? gazeLabel(activeGaze) : 'DISABLED';
+      if (!gazeFaces.length && cameraOn) ui.gazeState.textContent = gazeEnabled ? 'SEARCHING' : 'DISABLED';
+    }
+
+    async function loadGazeModel() {
+      aiState = 'PENDING'; updateMeters();
+      if (!window.FaceMesh) throw new Error('MediaPipe Face Mesh library unavailable. Check internet/CDN access.');
+      gazeModel = new window.FaceMesh({ locateFile: (file) => resolveMediaPipeAsset(file) });
+      gazeModel.setOptions({ maxNumFaces: 5, refineLandmarks: true, minDetectionConfidence: .32, minTrackingConfidence: .35 });
+      gazeModel.onResults(onGazeResults);
+      if (typeof gazeModel.initialize === 'function') await gazeModel.initialize();
+      model = gazeModel;
+      aiState = 'READY'; updateMeters();
+      log('UNIFIED FACE + IRIS PIPELINE ONLINE');
+      const engine = $('engine-state');
+      if (engine) engine.textContent = 'FACE MESH + IRIS // SINGLE WASM CORE';
+      setStatus(cameraState === 'READY' ? 'SYSTEMS NOMINAL' : 'NEURAL CORE ONLINE', 'online');
+      return true;
+    }
+
+    function updateMovementPrediction() {
+      if (!predictionEnabled || !cameraOn || selectedIndex < 0 || !detectedBoxes[selectedIndex]) {
+        motionPrediction = null;
+        if (!predictionEnabled) ui.motionState.textContent = 'DISABLED';
+        else if (!cameraOn || selectedIndex < 0) ui.motionState.textContent = 'STANDBY';
+        return;
+      }
+      const b = detectedBoxes[selectedIndex], now = performance.now();
+      movementSamples.push({ x: b.cx, y: b.cy, t: now });
+      movementSamples = movementSamples.filter((p) => now - p.t <= 1400).slice(-14);
+      if (movementSamples.length < 3) { ui.motionState.textContent = 'CALCULATING'; return; }
+      const origin = movementSamples[0].t;
+      const ts = movementSamples.map(p => p.t - origin);
+      const mx = ts.reduce((a, v) => a + v, 0) / ts.length;
+      const xs = movementSamples.map(p => p.x), ys = movementSamples.map(p => p.y);
+      const myX = xs.reduce((a, v) => a + v, 0) / xs.length;
+      const myY = ys.reduce((a, v) => a + v, 0) / ys.length;
+      let den = 0, numX = 0, numY = 0;
+      for (let i = 0; i < ts.length; i++) { const dt = ts[i] - mx; den += dt * dt; numX += dt * (xs[i] - myX); numY += dt * (ys[i] - myY); }
+      if (den < 1) return;
+      const vx = clamp(numX / den * 1000, -950, 950), vy = clamp(numY / den * 1000, -950, 950);
+      const ahead = .38, dx = clamp(vx * ahead, -260, 260), dy = clamp(vy * ahead, -220, 220);
+      motionPrediction = { fromX: b.cx, fromY: b.cy, x: clamp(b.cx + dx, 8, screenW() - 8), y: clamp(b.cy + dy, 8, screenH() - 8), vx, vy, ahead };
+      ui.motionState.textContent = `X ${vx >= 0 ? '+' : ''}${Math.round(vx)} / Y ${vy >= 0 ? '+' : ''}${Math.round(vy)} PX/S`;
+    }
+
+    function saveTrackingRecord() {
+      const payload = {
+        app: 'JARVIS / T.A.I.Y.K.I. HUD Tracking Log', schemaVersion: 1,
+        startedAt: recordingStartedAt, endedAt: new Date().toISOString(),
+        note: 'Session-only tracking metadata. No face images or identity templates are stored.',
+        sampleCount: trackingRecords.length, samples: trackingRecords
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = `jarvis-tracking-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+      log(`TRACKING LOG EXPORTED: ${trackingRecords.length} SAMPLES`); notify(`TRACK LOG SAVED // ${trackingRecords.length} SAMPLES`);
+    }
+
+    function recordTrackingFrame() {
+      if (!recording) return;
+      const now = performance.now();
+      if (now - lastRecordAt < 115 || trackingRecords.length >= 30000) return;
+      lastRecordAt = now;
+      const b = selectedIndex >= 0 ? detectedBoxes[selectedIndex] : null;
+      trackingRecords.push({
+        timestamp: new Date().toISOString(), elapsedMs: Math.round(now - (recordingStartedPerf || now)),
+        faceCount: predictions.length,
+        selectedFace: b ? { x: Math.round(b.cx), y: Math.round(b.cy), width: Math.round(b.w), height: Math.round(b.h), xPercent: +(b.cx / screenW() * 100).toFixed(2), yPercent: +(b.cy / screenH() * 100).toFixed(2) } : null,
+        gaze: gazeEnabled && activeGaze ? { direction: gazeLabel(activeGaze), x: +activeGaze.x.toFixed(4), y: +activeGaze.y.toFixed(4), calibrated: gazeCalibrated } : null,
+        predictedPosition: predictionEnabled && motionPrediction ? { x: Math.round(motionPrediction.x), y: Math.round(motionPrediction.y), horizonMs: Math.round(motionPrediction.ahead * 1000), velocityX: Math.round(motionPrediction.vx), velocityY: Math.round(motionPrediction.vy) } : null
+      });
+      ui.recordState.textContent = `ON // ${trackingRecords.length}`;
+    }
+
+    function drawHologramFace(face, selected) {
+      if (!hologramEnabled || !effectsOn || !face?.landmarks) return;
+      const lm = face.landmarks;
+      ctx.save();
+      ctx.lineWidth = selected ? 1.1 : .65;
+      const centerLocked = selected && locked && isLockedTargetCentered();
+      ctx.strokeStyle = centerLocked ? 'rgba(255,35,35,.9)' : selected ? 'rgba(200,138,82,.75)' : 'rgba(200,138,82,.3)';
+      ctx.fillStyle = centerLocked ? 'rgba(255,35,35,.9)' : selected ? 'rgba(200,138,82,.72)' : 'rgba(200,138,82,.35)';
+      ctx.shadowColor = centerLocked ? '#ff2222' : '#c88a52'; ctx.shadowBlur = selected ? 9 : 2;
+      for (const path of FACE_PATHS) {
+        ctx.beginPath();
+        path.forEach((idx, j) => {
+          const p = lm[idx]; if (!p) return;
+          const s = videoPointToScreen(p);
+          if (j === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+        });
+        ctx.stroke();
+      }
+      // Dotted landmark constellation gives the face a holographic scan appearance.
+      for (let i = 0; i < lm.length; i += 8) {
+        const p = videoPointToScreen(lm[i]);
+        ctx.beginPath(); ctx.arc(p.x, p.y, selected ? 1.15 : .75, 0, Math.PI * 2); ctx.fill();
+      }
+      if (selected) {
+        const b = detectedBoxes[selectedIndex];
+        if (b) {
+          const sweepY = b.y + ((hudAngle * 57) % Math.max(1, b.h));
+          ctx.strokeStyle = centerLocked ? 'rgba(255,35,35,.82)' : 'rgba(200,138,82,.58)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(b.x + b.w * .12, sweepY); ctx.lineTo(b.x + b.w * .88, sweepY); ctx.stroke();
+          ctx.setLineDash([3, 5]); ctx.strokeStyle = 'rgba(54,239,255,.28)';
+          ctx.beginPath(); ctx.ellipse(b.cx, b.cy, b.w * .62, b.h * .62, hudAngle * .5, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawGazeReticle() {
+      if (!gazeEnabled || !activeGaze || !cameraOn) return;
+      const dx = clamp((activeGaze.x - gazeBaseline.x) / .13, -1, 1);
+      const dy = clamp((activeGaze.y - gazeBaseline.y) / .15, -1, 1);
+      const x = screenW() / 2 + dx * screenW() * .38;
+      const y = screenH() / 2 + dy * screenH() * .30;
+      ctx.save(); ctx.strokeStyle = 'rgba(255,209,102,.85)'; ctx.fillStyle = 'rgba(255,209,102,.92)'; ctx.lineWidth = 1.2; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
+      const r = 10;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x-r-7,y); ctx.lineTo(x-r+1,y); ctx.moveTo(x+r-1,y); ctx.lineTo(x+r+7,y); ctx.moveTo(x,y-r-7); ctx.lineTo(x,y-r+1); ctx.moveTo(x,y+r-1); ctx.lineTo(x,y+r+7); ctx.stroke();
+      ctx.font = '9px Consolas, monospace'; ctx.fillText('EST. GAZE', Math.min(screenW()-75, x+14), Math.max(12, y-13));
+      ctx.restore();
+    }
+
+    function drawMovementPrediction() {
+      if (!predictionEnabled || !motionPrediction || !cameraOn) return;
+      const p = motionPrediction, x = p.x, y = p.y, size = 17;
+      ctx.save(); ctx.strokeStyle = 'rgba(255,209,102,.92)'; ctx.fillStyle = 'rgba(255,209,102,.95)'; ctx.lineWidth = 1.5; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
+      ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(p.fromX, p.fromY); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(x, y, size * .75, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x-size,y-size/2); ctx.lineTo(x-size,y-size); ctx.lineTo(x-size/2,y-size); ctx.moveTo(x+size/2,y-size); ctx.lineTo(x+size,y-size); ctx.lineTo(x+size,y-size/2); ctx.moveTo(x+size,y+size/2); ctx.lineTo(x+size,y+size); ctx.lineTo(x+size/2,y+size); ctx.moveTo(x-size/2,y+size); ctx.lineTo(x-size,y+size); ctx.lineTo(x-size,y+size/2); ctx.stroke();
+      ctx.font = '9px Consolas, monospace'; ctx.fillText(`PREDICT +${Math.round(p.ahead*1000)}MS`, Math.min(screenW()-128, x+size+7), Math.max(13, y-7));
+      ctx.restore();
+    }
+
+    function updateTargetList() {
+      ui.count.textContent = `${predictions.length} FOUND`;
+      ui.targetList.replaceChildren();
+      if (!predictions.length) {
+        const empty = document.createElement('div'); empty.className = 'empty-targets';
+        empty.textContent = cameraState === 'OFF' ? 'OPTICAL SENSOR IS STANDBY.' : aiState !== 'READY' ? 'NEURAL CORE IS NOT READY.' : 'SEARCHING FOR FACES...';
+        ui.targetList.append(empty); ui.confidence.textContent = '--'; return;
+      }
+      predictions.forEach((prediction, index) => {
+        const score = scoreFor(prediction);
+        const button = document.createElement('button'); button.type = 'button';
+        const targetFace = matchedMeshForBox(detectedBoxes[index]);
+        const profileName = targetFace?.identity?.name || '';
+        const centeredLocked = locked && index === selectedIndex && isLockedTargetCentered();
+        button.className = 'target-row' + (locked && index === selectedIndex ? ' selected' : '') + (centeredLocked ? ' center-locked' : '');
+        const id = document.createElement('span'); id.className = 'target-id'; id.textContent = `#${String(index + 1).padStart(2, '0')}`;
+        const name = document.createElement('span'); name.className = 'target-name'; name.textContent = profileName || (locked && index === selectedIndex ? 'LOCKED TARGET' : 'FACE SIGNATURE');
+        const confidence = document.createElement('span'); confidence.className = 'target-score'; confidence.textContent = score === null ? 'N/A' : `${Math.round(score * 100)}%`;
+        button.append(id, name, confidence); button.addEventListener('click', () => selectTarget(index, true));
+        ui.targetList.append(button);
+      });
+      const score = scoreFor(predictions[Math.max(0, selectedIndex)]);
+      ui.confidence.textContent = score === null || score === undefined ? '--' : `${(score * 100).toFixed(1)}%`;
+    }
+    function selectTarget(index, doLock = false) {
+      if (!predictions[index]) { notify('NO FACE TARGET AVAILABLE'); return; }
+      selectedIndex = index;
+      if (doLock) {
+        locked = true; lockedCenter = { ...detectedBoxes[index] && { cx: detectedBoxes[index].cx, cy: detectedBoxes[index].cy } };
+        if (!lockedCenter || !Number.isFinite(lockedCenter.cx)) lockedCenter = boxFor(predictions[index]);
+        lockLostFrames = 0;
+        ui.lockBtn.textContent = 'UNLOCK TARGET'; ui.lockBtn.classList.add('active');
+        ui.lockState.textContent = 'LOCKED'; log(`TARGET #${index + 1} LOCKED`); speak('Target locked.', true);
+        notify(`TARGET #${String(index + 1).padStart(2, '0')} LOCKED`);
+      }
+      updateTargetList();
+    }
+    function toggleLock() {
+      if (locked) {
+        locked = false; lockedCenter = null; selectedIndex = -1; lockLostFrames = 0;
+        ui.lockBtn.textContent = 'LOCK TARGET'; ui.lockBtn.classList.remove('active'); ui.lockState.textContent = 'UNLOCKED';
+        log('TARGET LOCK RELEASED'); speak('Target lock released.', true); notify('TARGET LOCK RELEASED'); updateTargetList(); return;
+      }
+      if (!predictions.length) { notify('NO FACE DETECTED — SCANNING'); log('LOCK REQUEST PENDING', 'warning'); return; }
+      const cx = screenW() / 2, cy = screenH() / 2;
+      let best = 0, bestDistance = Infinity;
+      detectedBoxes.forEach((b, i) => { const d = Math.hypot(b.cx - cx, b.cy - cy); if (d < bestDistance) { best = i; bestDistance = d; } });
+      selectTarget(best, true);
+    }
+    ui.lockBtn.addEventListener('click', toggleLock);
+    ui.registerFaceBtn.addEventListener('click', registerSelectedFace);
+
+    function handlePredictions(next) {
+      predictions = next;
+      detectedBoxes = predictions.map(boxFor);
+      if (locked && lockedCenter && detectedBoxes.length) {
+        let closest = -1, distance = Infinity;
+        detectedBoxes.forEach((b, i) => { const d = Math.hypot(b.cx - lockedCenter.cx, b.cy - lockedCenter.cy); if (d < distance) { closest = i; distance = d; } });
+        const maxDistance = Math.max(190, Math.min(screenW(), screenH()) * .32);
+        if (closest >= 0 && distance < maxDistance) {
+          selectedIndex = closest; lockedCenter = { cx: detectedBoxes[closest].cx, cy: detectedBoxes[closest].cy }; lockLostFrames = 0;
+        } else {
+          lockLostFrames++;
+          if (lockLostFrames > 25) {
+            locked = false; lockedCenter = null; selectedIndex = -1;
+            ui.lockBtn.textContent = 'LOCK TARGET'; ui.lockBtn.classList.remove('active'); ui.lockState.textContent = 'TARGET LOST';
+            log('TARGET SIGNAL LOST', 'warning'); setStatus('TARGET SIGNAL LOST', 'warning'); speak('Target signal lost.');
+          }
+        }
+      }
+      if (predictions.length !== lastCount) {
+        if (predictions.length > 0 && lastCount === 0) { log(`FACE SIGNATURES ACQUIRED: ${predictions.length}`); speak('Face detected.'); }
+        if (predictions.length === 0 && lastCount > 0) log('NO VISIBLE FACE SIGNATURES', 'warning');
+        lastCount = predictions.length;
+      }
+      if (predictions.length && !locked) selectedIndex = Math.min(selectedIndex < 0 ? 0 : selectedIndex, predictions.length - 1);
+      if (!predictions.length && !locked) selectedIndex = -1;
+      ui.count.textContent = `${predictions.length} FOUND`;
+      ui.lockState.textContent = locked ? (lockLostFrames ? 'SEARCHING...' : isLockedTargetCentered() ? 'CENTER // ALERT' : 'LOCKED') : 'UNLOCKED';
+      if (locked && lockLostFrames) setStatus('REACQUIRING TARGET', 'warning');
+      else if (locked) setStatus('TARGET TRACKED', 'online');
+      else if (predictions.length) setStatus(`FACE DETECTED // ${predictions.length}`, 'online');
+      else if (cameraState === 'READY' && aiState === 'READY') setStatus('SCANNING SECTOR', 'normal');
+      updateActiveGaze();
+      updateMovementPrediction();
+      recordTrackingFrame();
+      updateTargetList();
+    }
+
+    function drawArc(cx, cy, radius, start, end, color, width = 1, dash = []) {
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.arc(cx, cy, Math.max(1, radius), start, end); ctx.stroke(); ctx.restore();
+    }
+    function drawRadar(now) {
+      const cx = screenW() / 2, cy = screenH() / 2;
+      const radiusMax = Math.min(250, screenW() * .27, screenH() * .34);
+      if (effectsOn) {
+        ctx.save(); ctx.strokeStyle = 'rgba(54,239,255,.105)'; ctx.lineWidth = 1;
+        for (let radius = 50; radius <= radiusMax; radius += 50) { ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(cx - Math.min(330, screenW() * .33), cy); ctx.lineTo(cx + Math.min(330, screenW() * .33), cy); ctx.moveTo(cx, cy - Math.min(280, screenH() * .34)); ctx.lineTo(cx, cy + Math.min(280, screenH() * .34)); ctx.stroke();
+        const sweep = hudAngle * .75;
+        const gradient = ctx.createConicGradient(sweep, cx, cy);
+        gradient.addColorStop(0, 'rgba(54,239,255,0)'); gradient.addColorStop(.08, 'rgba(54,239,255,.08)'); gradient.addColorStop(.16, 'rgba(54,239,255,0)'); gradient.addColorStop(1, 'rgba(54,239,255,0)');
+        ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(cx, cy, radiusMax, 0, Math.PI * 2); ctx.fill();
+        drawArc(cx, cy, radiusMax * .68, hudAngle, hudAngle + 1.1, 'rgba(54,239,255,.82)', 1.5);
+        drawArc(cx, cy, radiusMax * .88, -hudAngle * .7, -hudAngle * .7 + .8, 'rgba(54,239,255,.45)', 1, [5, 7]);
+        ctx.restore();
+      }
+      // Always-on micro reticle keeps the display alive during startup and model loading.
+      ctx.save(); ctx.strokeStyle = 'rgba(54,239,255,.44)'; ctx.lineWidth = 1;
+      const s = 12, gap = 22; ctx.beginPath();
+      ctx.moveTo(cx-gap-s,cy); ctx.lineTo(cx-gap,cy); ctx.moveTo(cx+gap,cy); ctx.lineTo(cx+gap+s,cy);
+      ctx.moveTo(cx,cy-gap-s); ctx.lineTo(cx,cy-gap); ctx.moveTo(cx,cy+gap); ctx.lineTo(cx,cy+gap+s); ctx.stroke();
+      ctx.restore();
+    }
+    function isLockedTargetCentered() {
+      if(!locked || selectedIndex<0 || !detectedBoxes[selectedIndex]) return false;
+      const b=detectedBoxes[selectedIndex];
+      return Math.abs(b.cx-screenW()/2) <= screenW()*.12 && Math.abs(b.cy-screenH()/2) <= screenH()*.14;
+    }
+
+    function drawTarget(prediction, index, isSelected) {
+      const b = detectedBoxes[index] || boxFor(prediction);
+      const pad = Math.max(9, Math.min(23, Math.min(b.w, b.h) * .16));
+      const x = b.x - pad, y = b.y - pad, w = b.w + pad * 2, h = b.h + pad * 2;
+      const centerLocked = isSelected && locked && isLockedTargetCentered();
+      const color = centerLocked ? '#ff3030' : isSelected && locked ? '#ffd166' : isSelected ? '#e5fdff' : '#36efff';
+      const corner = Math.max(8, Math.min(w, h) * .22);
+      ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = isSelected ? 2.5 : 1.6; ctx.shadowColor = color; ctx.shadowBlur = isSelected ? 13 : 7;
+      ctx.beginPath();
+      ctx.moveTo(x,y+corner); ctx.lineTo(x,y); ctx.lineTo(x+corner,y);
+      ctx.moveTo(x+w-corner,y); ctx.lineTo(x+w,y); ctx.lineTo(x+w,y+corner);
+      ctx.moveTo(x+w,y+h-corner); ctx.lineTo(x+w,y+h); ctx.lineTo(x+w-corner,y+h);
+      ctx.moveTo(x+corner,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,y+h-corner); ctx.stroke();
+      if (isSelected) drawArc(b.cx, b.cy, Math.max(w,h)*.59, hudAngle*1.8, hudAngle*1.8+1.15, color, 1.5);
+      ctx.beginPath(); ctx.arc(b.cx,b.cy,2.6,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0; ctx.font = '10px Consolas, monospace';
+      const score = scoreFor(prediction); const knownName = matchedMeshForBox(b)?.identity?.name; const label = centerLocked ? `CENTER // ${knownName || 'LOCKED TARGET'}` : knownName ? `${knownName} // T-${String(index+1).padStart(2,'0')}` : locked && isSelected ? `LOCKED // T-${String(index+1).padStart(2,'0')}` : `FACE // T-${String(index+1).padStart(2,'0')}`;
+      const textX = x + w + 7 + 160 < screenW() ? x + w + 7 : Math.max(6, x - 165);
+      const textY = Math.max(14, Math.min(screenH()-35, y+12));
+      ctx.fillText(label, textX, textY); ctx.fillStyle = 'rgba(180,246,251,.85)';
+      ctx.fillText(`SCORE ${score === null ? '--' : (score*100).toFixed(1)+'%'}`, textX, textY+14);
+      ctx.fillText(`X:${Math.round(b.cx)} Y:${Math.round(b.cy)}`, textX, textY+28);
+      ctx.restore();
+    }
+
+    async function gazeLoop() {
+      if (gazeModel && cameraOn && video.readyState >= 2 && !gazeDetectionBusy && performance.now() - lastGazeDetection > 100) {
+        gazeDetectionBusy = true; lastGazeDetection = performance.now();
+        try { await gazeModel.send({ image: video }); }
+        catch (error) {
+          console.error('Face/iris inference error:', error);
+          log('INFERENCE FRAME ERROR', 'error');
+        }
+        finally { gazeDetectionBusy = false; }
+      }
+      setTimeout(gazeLoop, 30);
+    }
+
+    function renderLoop(now) {
+      hudAngle = (hudAngle + .018) % (Math.PI * 200);
+      fpsFrames++;
+      if (now - lastFpsAt >= 1000) {
+        const fps = Math.round(fpsFrames * 1000 / (now-lastFpsAt));
+        ui.fps.textContent = `${fps} FPS`; fpsFrames = 0; lastFpsAt = now;
+        ui.clock.textContent = `${new Date().toLocaleTimeString('ja-JP',{hour12:false})} JST`;
+        ui.date.textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'});
+      }
+      ctx.clearRect(0, 0, screenW(), screenH()); drawRadar(now);
+      if (cameraOn && video.readyState >= 2) predictions.forEach((prediction, index) => {
+        const b = detectedBoxes[index] || boxFor(prediction);
+        drawHologramFace(matchedMeshForBox(b), index === selectedIndex);
+        drawTarget(prediction, index, index === selectedIndex);
+      });
+      drawGazeReticle(); drawMovementPrediction();
+      requestAnimationFrame(renderLoop);
+    }
+
+    canvas.addEventListener('click', (event) => {
+      if (!predictions.length || !cameraOn) return;
+      const x = event.clientX, y = event.clientY;
+      let chosen = -1, best = Infinity;
+      detectedBoxes.forEach((b, index) => {
+        const pad = 28;
+        if (x >= b.x-pad && x <= b.x+b.w+pad && y >= b.y-pad && y <= b.y+b.h+pad) {
+          const dist = Math.hypot(b.cx-x,b.cy-y); if (dist < best) { chosen = index; best = dist; }
+        }
+      });
+      if (chosen >= 0) selectTarget(chosen, true);
+    });
+
+    ui.voiceBtn.addEventListener('click', () => {
+      voiceOn = !voiceOn; ui.voiceBtn.textContent = voiceOn ? 'VOICE: ON' : 'VOICE: OFF'; ui.voiceBtn.classList.toggle('active', voiceOn);
+      if (voiceOn) { speak(assistantMode === 'T.A.I.Y.K.I.' ? 'T A I Y K I systems are online.' : 'Good day. J A R V I S systems are online. At your service, sir.', true); log('VOICE FEEDBACK ENABLED'); notify('VOICE FEEDBACK ENABLED'); }
+      else { if ('speechSynthesis' in window) speechSynthesis.cancel(); log('VOICE FEEDBACK DISABLED'); }
+    });
+    ui.cameraBtn.addEventListener('click', async () => {
+      if (cameraOn) { stopCamera(); return; }
+      ui.cameraBtn.textContent = 'CAMERA: STARTING';
+      try { await startCamera(); notify('OPTICAL SENSOR ONLINE'); if (model) log('FACE SCAN RESUMED'); }
+      catch (error) { console.error(error); notify('CAMERA ERROR — CHECK PERMISSIONS'); }
+    });
+    ui.effectsBtn.addEventListener('click', () => {
+      effectsOn = !effectsOn; $('container').classList.toggle('effects-off', !effectsOn);
+      ui.effectsBtn.textContent = `EFFECTS: ${effectsOn ? 'ON' : 'OFF'}`; ui.effectsBtn.classList.toggle('active', effectsOn);
+      log(`HOLOGRAPHIC EFFECTS ${effectsOn ? 'ENABLED' : 'DISABLED'}`);
+    });
+    ui.modeBtn.addEventListener('click', () => {
+      assistantMode = assistantMode === 'JARVIS' ? 'T.A.I.Y.K.I.' : 'JARVIS';
+      const taiyaki = assistantMode === 'T.A.I.Y.K.I.';
+      document.body.classList.toggle('taiyaki', taiyaki);
+      $('system-name').textContent = taiyaki ? 'T.A.I.Y.K.I.' : 'J.A.R.V.I.S.';
+      $('system-sub').textContent = taiyaki ? 'T.A.I.Y.K.I. SYSTEMS // BROWN CORE' : 'STARK INDUSTRIES // MK-85';
+      document.querySelector('.boot-title').textContent = taiyaki ? 'T.A.I.Y.K.I.' : 'J.A.R.V.I.S.';
+      document.querySelector('.boot-subtitle').textContent = taiyaki ? 'LOCAL VISION // T.A.I.Y.K.I. CORE' : 'JUST A RATHER VERY INTELLIGENT SYSTEM';
+      ui.modeBtn.textContent = `MODE: ${assistantMode}`;
+      ui.modeBtn.classList.toggle('active', taiyaki);
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      log(`ASSISTANT MODE SWITCHED TO ${assistantMode}`); notify(`${assistantMode} ONLINE`);
+      speak(taiyaki ? 'T A I Y K I systems are online.' : 'Good day. J A R V I S systems are online.', true);
+    });
+    ui.cameraSelect.addEventListener('change', async () => {
+      const id = ui.cameraSelect.value;
+      if (!id) return;
+      const wasOn = cameraOn;
+      if (wasOn) stopCamera();
+      try { await startCamera(id); log('VIDEO INPUT SWITCHED'); notify('CAMERA INPUT UPDATED'); }
+      catch (error) { console.error(error); log('CAMERA SWITCH FAILED', 'error'); notify('CAMERA SWITCH FAILED'); }
+    });
+    ui.snapshotBtn.addEventListener('click', () => {
+      if (!cameraOn || !video.videoWidth) { notify('CAMERA IS OFFLINE'); return; }
+      const out = document.createElement('canvas'); out.width = video.videoWidth; out.height = video.videoHeight;
+      const outCtx = out.getContext('2d'); outCtx.translate(out.width, 0); outCtx.scale(-1, 1); outCtx.drawImage(video, 0, 0, out.width, out.height);
+      const a = document.createElement('a'); a.download = `stark-snapshot-${new Date().toISOString().replace(/[:.]/g,'-')}.png`; a.href = out.toDataURL('image/png'); a.click();
+      log('OPTICAL SNAPSHOT SAVED'); notify('SNAPSHOT SAVED');
+    });
+    ui.filterBtn.addEventListener('click', () => {
+      filterMode = (filterMode + 1) % 3;
+      const filters = ['contrast(1.12) brightness(.62) saturate(.48) hue-rotate(145deg)', 'contrast(1.04) brightness(.9) saturate(.85)', 'none'];
+      video.style.filter = filters[filterMode];
+      ui.filterBtn.textContent = ['FILTER: HUD', 'FILTER: CLEAR', 'FILTER: RAW'][filterMode];
+      log(`CAMERA FILTER ${['HUD','CLEAR','RAW'][filterMode]}`);
+    });
+    ui.gazeBtn.addEventListener('click', () => {
+      gazeEnabled = !gazeEnabled;
+      ui.gazeBtn.textContent = `GAZE: ${gazeEnabled ? 'ON' : 'OFF'}`; ui.gazeBtn.classList.toggle('active', gazeEnabled);
+      ui.gazeState.textContent = gazeEnabled ? (activeGaze ? gazeLabel(activeGaze) : 'SEARCHING') : 'DISABLED';
+      log(`GAZE ESTIMATION ${gazeEnabled ? 'ENABLED' : 'DISABLED'}`); notify(`GAZE ${gazeEnabled ? 'ENABLED' : 'DISABLED'}`);
+    });
+    ui.gazeCalBtn.addEventListener('click', () => {
+      if (!activeGaze) { notify('NO IRIS DATA // FACE CAMERA AND TRY AGAIN'); return; }
+      gazeBaseline = { x: activeGaze.x, y: activeGaze.y }; gazeCalibrated = true;
+      log('GAZE CENTER CALIBRATED'); notify('GAZE CENTER CALIBRATED // LOOK AT SCREEN CENTER');
+      ui.gazeState.textContent = 'CENTER CALIBRATED';
+    });
+    ui.predictBtn.addEventListener('click', () => {
+      predictionEnabled = !predictionEnabled;
+      if (!predictionEnabled) { motionPrediction = null; movementSamples = []; }
+      ui.predictBtn.textContent = `PREDICT: ${predictionEnabled ? 'ON' : 'OFF'}`; ui.predictBtn.classList.toggle('active', predictionEnabled);
+      ui.motionState.textContent = predictionEnabled ? 'CALCULATING' : 'DISABLED';
+      log(`MOTION PREDICTION ${predictionEnabled ? 'ENABLED' : 'DISABLED'}`); notify(`PREDICTION ${predictionEnabled ? 'ENABLED' : 'DISABLED'}`);
+    });
+    ui.holoBtn.addEventListener('click', () => {
+      hologramEnabled = !hologramEnabled;
+      ui.holoBtn.textContent = `HOLO: ${hologramEnabled ? 'ON' : 'OFF'}`;
+      ui.holoBtn.classList.toggle('active', hologramEnabled); ui.holoBtn.classList.toggle('holo-active', hologramEnabled);
+      log(`FACE HOLOGRAM ${hologramEnabled ? 'ENABLED' : 'DISABLED'}`); notify(`HOLOGRAM ${hologramEnabled ? 'ENABLED' : 'DISABLED'}`);
+    });
+    ui.recordBtn.addEventListener('click', () => {
+      if (!recording) {
+        recording = true; trackingRecords = []; recordingStartedAt = new Date().toISOString(); recordingStartedPerf = performance.now(); lastRecordAt = 0;
+        ui.recordBtn.textContent = 'RECORD: ON'; ui.recordBtn.classList.add('recording');
+        ui.recordState.textContent = 'ON // 0';
+        log('TRACKING RECORDING STARTED // METADATA ONLY'); notify('RECORDING STARTED // NO IMAGES SAVED');
+      } else {
+        recording = false; ui.recordBtn.textContent = 'RECORD: OFF'; ui.recordBtn.classList.remove('recording');
+        ui.recordState.textContent = 'SAVING...';
+        if (trackingRecords.length) saveTrackingRecord();
+        else notify('NO TRACKING DATA TO SAVE');
+        ui.recordState.textContent = 'OFF';
+      }
+    });
+
+    ui.fullBtn.addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await $('container').requestFullscreen(); else await document.exitFullscreen();
+      } catch (error) { notify('FULLSCREEN NOT AVAILABLE'); }
+    });
+    document.addEventListener('fullscreenchange', () => { ui.fullBtn.textContent = document.fullscreenElement ? 'EXIT FULLSCREEN' : 'FULLSCREEN'; resizeCanvas(); });
+    ui.resetBtn.addEventListener('click', () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); location.reload(); });
+
+    async function initialize() {
+      if (initStarted) return; initStarted = true;
+      log('BOOT ROM INITIALIZED'); log('HUD RENDER PIPELINE ONLINE');
+      const cameraTask = startCamera().catch(error => {
+        console.error('Camera initialization:', error);
+        const message = error?.name === 'NotAllowedError' ? 'CAMERA PERMISSION DENIED' : error?.name === 'NotFoundError' ? 'NO CAMERA DEVICE FOUND' : `CAMERA ERROR: ${error?.message || 'UNKNOWN'}`;
+        log(message, 'error'); return false;
+      });
+      const modelTask = loadGazeModel().catch(error => {
+        aiState = 'ERROR'; updateMeters(); console.error('AI initialization:', error);
+        ui.gazeState.textContent = 'UNAVAILABLE';
+        log('NEURAL CORE LOAD FAILED', 'error'); setStatus('AI CORE ERROR', 'error'); return false;
+      });
+      await Promise.allSettled([cameraTask, modelTask]);
+      updateMeters();
+      if (cameraOn && model) { setStatus('SYSTEMS NOMINAL', 'online'); log('ALL PRIMARY SYSTEMS NOMINAL'); }
+      else { setStatus('PARTIAL STARTUP // CHECK LOG', 'warning'); log('PARTIAL STARTUP — SEE DIAGNOSTICS', 'warning'); }
+      updateTargetList(); gazeLoop();
+    }
+    window.addEventListener('beforeunload', (event) => {
+      if (recording && trackingRecords.length) { event.preventDefault(); event.returnValue = ''; }
+    });
+    window.addEventListener('online', () => { log('NETWORK CONNECTION RESTORED'); });
+    window.addEventListener('offline', () => { log('NETWORK DISCONNECTED', 'warning'); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resizeCanvas(); });
+
+    // The HUD and boot animation begin immediately, before camera/model initialization.
+    addBootLine('POWERING STARK INTERFACE...', true);
+    log('J.A.R.V.I.S. SESSION CREATED');
+    requestAnimationFrame(renderLoop);
+    requestAnimationFrame(tickBoot);
+    initialize();
+  })();
+  </script>
+</body>
+</html>
