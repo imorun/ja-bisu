@@ -159,6 +159,18 @@
       .topbar { left: 45px; right: 45px; } .brand h1 { font-size: 11px; }
       .brand .sub { font-size: 7px; }
     }
+
+    /* Persistent switch for hiding the HUD bars/panels without disabling face tracking. */
+    .bar-toggle { position:fixed; z-index:100; top:12px; right:12px; min-width:82px; padding:7px 9px; color:var(--cyan); background:rgba(2,17,29,.94); border:1px solid var(--line); box-shadow:0 0 12px var(--cyan-soft); backdrop-filter:blur(7px); font:9px var(--mono); letter-spacing:.07em; cursor:pointer; pointer-events:auto; }
+    body.taiyaki .bar-toggle { color:var(--cyan); background:rgba(31,19,12,.96); }
+    .bar-toggle:hover, .bar-toggle:focus-visible { outline:1px solid var(--cyan); box-shadow:0 0 18px var(--cyan-soft); }
+    body.bars-hidden .hud .topbar,
+    body.bars-hidden .hud .panel,
+    body.bars-hidden .hud .bottom-readout,
+    body.bars-hidden .controls,
+    body.bars-hidden .button-size-control { display:none !important; }
+    @media (max-width:700px) { .bar-toggle { top:70px; right:8px; min-width:74px; padding:6px 7px; font-size:8px; } }
+
   </style>
   <!-- A single MediaPipe runtime handles face landmarks and iris estimation. -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
@@ -235,6 +247,8 @@
       <output id="button-size-value" for="button-size-slider">80%</output>
     </section>
 
+    <button id="bars-toggle-btn" class="bar-toggle" type="button" aria-pressed="false" title="HUDのバー類を非表示">HIDE BARS</button>
+
     <div id="toast" class="toast" role="status"></div>
 
     <section id="boot-screen" class="boot-screen" aria-label="起動シーケンス">
@@ -269,7 +283,7 @@
       bootStage: $('boot-stage'), bootPercent: $('boot-percent'), bootBar: $('boot-bar'), skipBoot: $('skip-boot'), toast: $('toast'),
       gazeState: $('gaze-state'), motionState: $('motion-state'), recordState: $('record-state'),
       gazeBtn: $('gaze-btn'), gazeCalBtn: $('gaze-cal-btn'), predictBtn: $('predict-btn'), holoBtn: $('holo-btn'), recordBtn: $('record-btn'),
-      buttonSizeControl: $('button-size-control'), buttonSizeSlider: $('button-size-slider'), buttonSizeValue: $('button-size-value')
+      buttonSizeControl: $('button-size-control'), buttonSizeSlider: $('button-size-slider'), buttonSizeValue: $('button-size-value'), barsToggleBtn: $('bars-toggle-btn')
     };
 
     function detectMobileDevice() {
@@ -390,6 +404,18 @@
     applyButtonSize(buttonSize, false);
     requestAnimationFrame(positionButtonSizeControl);
     ui.buttonSizeSlider.addEventListener('input', () => applyButtonSize(ui.buttonSizeSlider.value));
+
+    function setBarsHidden(hidden) {
+      document.body.classList.toggle('bars-hidden', hidden);
+      ui.barsToggleBtn.textContent = hidden ? 'SHOW BARS' : 'HIDE BARS';
+      ui.barsToggleBtn.setAttribute('aria-pressed', String(hidden));
+      ui.barsToggleBtn.title = hidden ? 'HUDのバー類を再表示' : 'HUDのバー類を非表示';
+      if (!hidden) requestAnimationFrame(positionButtonSizeControl);
+    }
+    ui.barsToggleBtn.addEventListener('click', () => {
+      setBarsHidden(!document.body.classList.contains('bars-hidden'));
+    });
+
 
     function addBootLine(message, active = false) {
       bootLines.push({ message, active });
@@ -760,7 +786,8 @@
       }
       if (centerCount) { centerX /= centerCount; centerY /= centerCount; }
       else { centerX = screenW() / 2; centerY = screenH() / 2; }
-      const visualScale = Math.max(.05, buttonSize / 100);
+      // Person-highlight hologram is fixed at 100%, independent of HUD SIZE.
+      const visualScale = 1;
       ctx.save();
       ctx.translate(centerX, centerY); ctx.scale(visualScale, visualScale); ctx.translate(-centerX, -centerY);
       ctx.lineWidth = selected ? 1.1 : .65;
@@ -801,7 +828,8 @@
       const dy = clamp((activeGaze.y - gazeBaseline.y) / .15, -1, 1);
       const x = screenW() / 2 + dx * screenW() * .38;
       const y = screenH() / 2 + dy * screenH() * .30;
-      const visualScale = Math.max(.05, buttonSize / 100);
+      // Gaze reticle remains at 100% because it belongs to person tracking.
+      const visualScale = 1;
       ctx.save(); ctx.translate(x, y); ctx.scale(visualScale, visualScale); ctx.translate(-x, -y);
       ctx.strokeStyle = 'rgba(255,209,102,.85)'; ctx.fillStyle = 'rgba(255,209,102,.92)'; ctx.lineWidth = 1.2; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
       const r = 10;
@@ -814,7 +842,8 @@
     function drawMovementPrediction() {
       if (!predictionEnabled || !motionPrediction || !cameraOn) return;
       const p = motionPrediction, x = p.x, y = p.y, size = 17;
-      const visualScale = Math.max(.05, buttonSize / 100);
+      // Person movement prediction overlay remains at 100%.
+      const visualScale = 1;
       ctx.save(); ctx.translate(x, y); ctx.scale(visualScale, visualScale); ctx.translate(-x, -y);
       ctx.strokeStyle = 'rgba(255,209,102,.92)'; ctx.fillStyle = 'rgba(255,209,102,.95)'; ctx.lineWidth = 1.5; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
       ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(p.fromX, p.fromY); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([]);
@@ -956,7 +985,8 @@
       const centerLocked = isSelected && locked && isLockedTargetCentered();
       const color = centerLocked ? '#ff3030' : isSelected && locked ? '#ffd166' : isSelected ? '#e5fdff' : '#36efff';
       const corner = Math.max(8, Math.min(w, h) * .22);
-      const visualScale = Math.max(.05, buttonSize / 100);
+      // Person target frame and its labels remain at 100%.
+      const visualScale = 1;
       ctx.save(); ctx.translate(b.cx, b.cy); ctx.scale(visualScale, visualScale); ctx.translate(-b.cx, -b.cy);
       ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = isSelected ? 2.5 : 1.6; ctx.shadowColor = color; ctx.shadowBlur = isSelected ? 13 : 7;
       ctx.beginPath();
