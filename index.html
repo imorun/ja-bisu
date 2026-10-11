@@ -28,7 +28,8 @@
     body.taiyaki .grid-overlay { background-image:linear-gradient(rgba(200,138,82,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(200,138,82,.14) 1px,transparent 1px); }
     body.taiyaki #webcam { filter:contrast(1.12) brightness(.68) saturate(.75) sepia(.28); }
     #container { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: radial-gradient(ellipse at 50% 48%, #072533 0%, #04111d 45%, #01050b 100%); }
-    #webcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); filter: contrast(1.12) brightness(.62) saturate(.48) hue-rotate(145deg); opacity: .44; z-index: 1; transition: opacity .35s; }
+    #webcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: none; filter: contrast(1.12) brightness(.62) saturate(.48) hue-rotate(145deg); opacity: .44; z-index: 1; transition: opacity .35s; }
+    body.mirror-view #webcam { transform: scaleX(-1); }
     #webcam.camera-off { opacity: 0; }
     #hudCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; cursor: crosshair; }
     .grid-overlay { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: .18; background-image: linear-gradient(rgba(54,239,255,.13) 1px, transparent 1px), linear-gradient(90deg, rgba(54,239,255,.13) 1px, transparent 1px); background-size: 42px 42px; mask-image: radial-gradient(ellipse, black 15%, transparent 78%); }
@@ -209,6 +210,7 @@
       <button class="hud-btn" id="lock-btn" type="button" title="選択した顔をロック">LOCK TARGET</button>
       <button class="hud-btn" id="register-face-btn" type="button" title="選択した顔に名前を付けてこのブラウザーに保存">REGISTER FACE</button>
       <button class="hud-btn" id="camera-btn" type="button" title="カメラ停止/再開">CAMERA: ON</button>
+      <button class="hud-btn" id="mirror-btn" type="button" title="スマホでは自動ミラー。表示を反転/解除">MIRROR: AUTO</button>
       <button class="hud-btn" id="effects-btn" type="button" title="スキャンエフェクト切替">EFFECTS: ON</button>
       <button class="hud-btn" id="snapshot-btn" type="button" title="現在のカメラ画像を保存">SNAPSHOT</button>
       <button class="hud-btn" id="filter-btn" type="button" title="カメラ映像フィルター切替">FILTER: HUD</button>
@@ -250,12 +252,23 @@
       fps: $('fps-display'), resolution: $('resolution-display'), confidence: $('confidence-display'),
       count: $('target-count'), targetList: $('target-list'), lockState: $('lock-state'), log: $('log-list'),
       voiceBtn: $('voice-btn'), lockBtn: $('lock-btn'), registerFaceBtn: $('register-face-btn'), cameraBtn: $('camera-btn'), effectsBtn: $('effects-btn'),
-      modeBtn: $('mode-btn'), cameraSelect: $('camera-select'), snapshotBtn: $('snapshot-btn'), filterBtn: $('filter-btn'),
+      modeBtn: $('mode-btn'), cameraSelect: $('camera-select'), snapshotBtn: $('snapshot-btn'), filterBtn: $('filter-btn'), mirrorBtn: $('mirror-btn'),
       fullBtn: $('fullscreen-btn'), resetBtn: $('reset-btn'), boot: $('boot-screen'), bootLog: $('boot-log'),
       bootStage: $('boot-stage'), bootPercent: $('boot-percent'), bootBar: $('boot-bar'), skipBoot: $('skip-boot'), toast: $('toast'),
       gazeState: $('gaze-state'), motionState: $('motion-state'), recordState: $('record-state'),
       gazeBtn: $('gaze-btn'), gazeCalBtn: $('gaze-cal-btn'), predictBtn: $('predict-btn'), holoBtn: $('holo-btn'), recordBtn: $('record-btn')
     };
+
+    function detectMobileDevice() {
+      const ua = navigator.userAgent || '';
+      if (typeof navigator.userAgentData?.mobile === 'boolean') return navigator.userAgentData.mobile;
+      return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+        (navigator.maxTouchPoints > 1 && Math.min(screen.width || window.innerWidth, screen.height || window.innerHeight) <= 900 && matchMedia('(pointer: coarse)').matches);
+    }
+    let mirrorView = detectMobileDevice();
+    document.body.classList.toggle('mirror-view', mirrorView);
+    ui.mirrorBtn.textContent = `MIRROR: ${mirrorView ? 'ON' : 'OFF'}`;
+    ui.mirrorBtn.classList.toggle('active', mirrorView);
 
     let model = null, gazeModel = null, stream = null, cameraOn = false, cameraState = 'PENDING', aiState = 'PENDING';
     let predictions = [], detectedBoxes = [], selectedIndex = -1, locked = false, lockedCenter = null;
@@ -458,7 +471,7 @@
       const offsetX = (screenW() - video.videoWidth * scale) / 2;
       const offsetY = (screenH() - video.videoHeight * scale) / 2;
       const w = bw * scale, h = bh * scale;
-      const x = screenW() - (offsetX + (left + bw) * scale);
+      const x = mirrorView ? screenW() - (offsetX + (left + bw) * scale) : offsetX + left * scale;
       const y = offsetY + top * scale;
       return { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
     }
@@ -482,7 +495,8 @@
       const scale = Math.max(screenW() / video.videoWidth, screenH() / video.videoHeight);
       const offsetX = (screenW() - video.videoWidth * scale) / 2;
       const offsetY = (screenH() - video.videoHeight * scale) / 2;
-      return { x: screenW() - (offsetX + point.x * video.videoWidth * scale), y: offsetY + point.y * video.videoHeight * scale };
+      const sourceX = offsetX + point.x * video.videoWidth * scale;
+      return { x: mirrorView ? screenW() - sourceX : sourceX, y: offsetY + point.y * video.videoHeight * scale };
     }
 
     function eyeRatios(landmarks, irisIndex, cornerA, cornerB, lidA, lidB) {
@@ -500,7 +514,8 @@
       const a = eyeRatios(landmarks, 468, 33, 133, 159, 145);
       const b = eyeRatios(landmarks, 473, 362, 263, 386, 374);
       if (!a || !b) return null;
-      return { x: clamp(1 - (a.x + b.x) / 2, 0, 1), y: clamp((a.y + b.y) / 2, 0, 1) };
+      const averageX = (a.x + b.x) / 2;
+      return { x: clamp(mirrorView ? 1 - averageX : averageX, 0, 1), y: clamp((a.y + b.y) / 2, 0, 1) };
     }
 
     const FACE_PROFILE_KEY = 'taiyaki_face_profiles_v1';
@@ -944,6 +959,15 @@
       try { await startCamera(); notify('OPTICAL SENSOR ONLINE'); if (model) log('FACE SCAN RESUMED'); }
       catch (error) { console.error(error); notify('CAMERA ERROR — CHECK PERMISSIONS'); }
     });
+    ui.mirrorBtn.addEventListener('click', () => {
+      mirrorView = !mirrorView;
+      document.body.classList.toggle('mirror-view', mirrorView);
+      ui.mirrorBtn.textContent = `MIRROR: ${mirrorView ? 'ON' : 'OFF'}`;
+      ui.mirrorBtn.classList.toggle('active', mirrorView);
+      gazeBaseline = { x: .5, y: .5 }; gazeCalibrated = false;
+      log(`CAMERA MIRROR ${mirrorView ? 'ENABLED' : 'DISABLED'}`);
+      notify(`MIRROR ${mirrorView ? 'ON' : 'OFF'} // RE-CALIBRATE GAZE IF NEEDED`);
+    });
     ui.effectsBtn.addEventListener('click', () => {
       effectsOn = !effectsOn; $('container').classList.toggle('effects-off', !effectsOn);
       ui.effectsBtn.textContent = `EFFECTS: ${effectsOn ? 'ON' : 'OFF'}`; ui.effectsBtn.classList.toggle('active', effectsOn);
@@ -974,7 +998,9 @@
     ui.snapshotBtn.addEventListener('click', () => {
       if (!cameraOn || !video.videoWidth) { notify('CAMERA IS OFFLINE'); return; }
       const out = document.createElement('canvas'); out.width = video.videoWidth; out.height = video.videoHeight;
-      const outCtx = out.getContext('2d'); outCtx.translate(out.width, 0); outCtx.scale(-1, 1); outCtx.drawImage(video, 0, 0, out.width, out.height);
+      const outCtx = out.getContext('2d');
+      if (mirrorView) { outCtx.translate(out.width, 0); outCtx.scale(-1, 1); }
+      outCtx.drawImage(video, 0, 0, out.width, out.height);
       const a = document.createElement('a'); a.download = `stark-snapshot-${new Date().toISOString().replace(/[:.]/g,'-')}.png`; a.href = out.toDataURL('image/png'); a.click();
       log('OPTICAL SNAPSHOT SAVED'); notify('SNAPSHOT SAVED');
     });
