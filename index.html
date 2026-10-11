@@ -160,9 +160,9 @@
       .brand .sub { font-size: 7px; }
     }
 
-    /* Hide only the top status bar. Panels, face highlighting, and bottom controls remain visible. */
-    .bar-toggle { white-space:nowrap; }
-    body.bars-hidden .hud .topbar { display:none !important; }
+    /* The bottom toggle hides only the HUD SIZE control; the top status bar stays visible. */
+    .size-toggle { white-space:nowrap; }
+    body.hud-size-hidden #button-size-control { display:none !important; }
 
   </style>
   <!-- A single MediaPipe runtime handles face landmarks and iris estimation. -->
@@ -221,8 +221,8 @@
     </section>
 
     <nav class="controls" aria-label="操作">
+      <button id="size-toggle-btn" class="hud-btn size-toggle" type="button" aria-pressed="false" title="HUD SIZEバーを非表示">HIDE SIZE</button>
       <button class="hud-btn" id="mode-btn" type="button" title="JARVIS / T.A.I.Y.K.I. 切替">MODE: JARVIS</button>
-      <button id="bars-toggle-btn" class="hud-btn bar-toggle" type="button" aria-pressed="false" title="上部バーを非表示">HIDE BAR</button>
       <select class="hud-select" id="camera-select" aria-label="カメラ選択" title="カメラ切り替え"><option value="">CAMERA INPUT</option></select>
       <button class="hud-btn" id="voice-btn" type="button" title="音声アナウンス切替">VOICE: OFF</button>
       <button class="hud-btn" id="lock-btn" type="button" title="選択した顔をロック">LOCK TARGET</button>
@@ -275,7 +275,7 @@
       bootStage: $('boot-stage'), bootPercent: $('boot-percent'), bootBar: $('boot-bar'), skipBoot: $('skip-boot'), toast: $('toast'),
       gazeState: $('gaze-state'), motionState: $('motion-state'), recordState: $('record-state'),
       gazeBtn: $('gaze-btn'), gazeCalBtn: $('gaze-cal-btn'), predictBtn: $('predict-btn'), holoBtn: $('holo-btn'), recordBtn: $('record-btn'),
-      buttonSizeControl: $('button-size-control'), buttonSizeSlider: $('button-size-slider'), buttonSizeValue: $('button-size-value'), barsToggleBtn: $('bars-toggle-btn')
+      buttonSizeControl: $('button-size-control'), buttonSizeSlider: $('button-size-slider'), buttonSizeValue: $('button-size-value'), sizeToggleBtn: $('size-toggle-btn')
     };
 
     function detectMobileDevice() {
@@ -397,15 +397,15 @@
     requestAnimationFrame(positionButtonSizeControl);
     ui.buttonSizeSlider.addEventListener('input', () => applyButtonSize(ui.buttonSizeSlider.value));
 
-    function setBarsHidden(hidden) {
-      document.body.classList.toggle('bars-hidden', hidden);
-      ui.barsToggleBtn.textContent = hidden ? 'SHOW BAR' : 'HIDE BAR';
-      ui.barsToggleBtn.setAttribute('aria-pressed', String(hidden));
-      ui.barsToggleBtn.title = hidden ? '上部バーを再表示' : '上部バーを非表示';
+    function setHudSizeHidden(hidden) {
+      document.body.classList.toggle('hud-size-hidden', hidden);
+      ui.sizeToggleBtn.textContent = hidden ? 'SHOW SIZE' : 'HIDE SIZE';
+      ui.sizeToggleBtn.setAttribute('aria-pressed', String(hidden));
+      ui.sizeToggleBtn.title = hidden ? 'HUD SIZEバーを再表示' : 'HUD SIZEバーを非表示';
       if (!hidden) requestAnimationFrame(positionButtonSizeControl);
     }
-    ui.barsToggleBtn.addEventListener('click', () => {
-      setBarsHidden(!document.body.classList.contains('bars-hidden'));
+    ui.sizeToggleBtn.addEventListener('click', () => {
+      setHudSizeHidden(!document.body.classList.contains('hud-size-hidden'));
     });
 
 
