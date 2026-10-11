@@ -22,7 +22,7 @@
     html, body { width: 100%; height: 100%; overflow: hidden; background: #020912; color: var(--text); }
     body { font-family: "Segoe UI", var(--mono); }
     button, select { font: inherit; }
-    select.hud-select { min-height:39px; max-width:190px; padding:0 8px; color:var(--cyan); background:rgba(3,22,34,.95); border:1px solid rgba(54,239,255,.54); font:10px var(--mono); letter-spacing:.04em; }
+    select.hud-select { min-height:var(--hud-select-height,39px); max-width:190px; padding:0 var(--hud-select-pad,8px); color:var(--cyan); background:rgba(3,22,34,.95); border:1px solid rgba(54,239,255,.54); font-size:var(--hud-select-font,10px); font-family:var(--mono); letter-spacing:.04em; }
     body.taiyaki { --cyan:#c88a52; --cyan-soft:rgba(200,138,82,.18); --cyan-faint:rgba(200,138,82,.08); --text:#f5dfc5; --muted:#b58a68; --amber:#e3b06f; --line:rgba(200,138,82,.42); --panel:rgba(31,19,12,.88); }
     body.taiyaki #container { background:radial-gradient(ellipse at 50% 48%, #3a2416 0%, #1a100a 48%, #070402 100%); }
     body.taiyaki .grid-overlay { background-image:linear-gradient(rgba(200,138,82,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(200,138,82,.14) 1px,transparent 1px); }
@@ -81,8 +81,8 @@
     .log-row .log-time { color: #388b98; }
     .log-row.warn .log-message { color: var(--amber); }
     .log-row.error .log-message { color: var(--red); }
-    .controls { position: absolute; z-index: 10; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; width: max-content; max-width: calc(100vw - 100px); pointer-events: auto; }
-    .hud-btn { min-height: 39px; padding: 0 13px; color: var(--cyan); background: rgba(3,22,34,.9); border: 1px solid rgba(54,239,255,.54); cursor: pointer; font: 10px var(--mono); letter-spacing: .12em; box-shadow: 0 0 12px rgba(54,239,255,.06); transition: .18s; }
+    .controls { position: absolute; z-index: 10; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; flex-wrap: wrap; gap: var(--hud-control-gap,8px); width: max-content; max-width: calc(100vw - 100px); pointer-events: auto; }
+    .hud-btn { min-width: 0; min-height: var(--hud-btn-height,39px); padding: 0 var(--hud-btn-pad,13px); color: var(--cyan); background: rgba(3,22,34,.9); border: 1px solid rgba(54,239,255,.54); cursor: pointer; font-family: var(--mono); font-size: var(--hud-btn-font,10px); letter-spacing: var(--hud-btn-letter,.12em); box-shadow: 0 0 12px rgba(54,239,255,.06); transition: .18s; }
     .hud-btn:hover, .hud-btn.active { color: #021018; background: var(--cyan); box-shadow: 0 0 17px rgba(54,239,255,.5); }
     .hud-btn.warn { border-color: rgba(255,209,102,.7); color: var(--amber); }
     .hud-btn:focus-visible, .target-row:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -107,6 +107,11 @@
     .boot-skip:hover { color: white; }
     .toast { position: absolute; z-index: 15; left: 50%; top: 92px; transform: translate(-50%, -12px); opacity: 0; padding: 10px 15px; border: 1px solid var(--line); background: rgba(1,15,24,.94); color: var(--cyan); font: 10px var(--mono); letter-spacing: .1em; transition: .2s; pointer-events: none; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .button-size-control { position:absolute; z-index:12; left:50%; bottom:250px; transform:translateX(-50%); width:min(310px,calc(100vw - 24px)); min-height:32px; display:flex; align-items:center; justify-content:center; gap:9px; padding:5px 10px; color:var(--cyan); background:rgba(2,17,29,.91); border:1px solid var(--line); box-shadow:0 0 12px var(--cyan-soft); backdrop-filter:blur(7px); font:9px var(--mono); letter-spacing:.07em; pointer-events:auto; visibility:hidden; }
+    body.taiyaki .button-size-control { background:rgba(31,19,12,.94); }
+    .button-size-control label { white-space:nowrap; }
+    .button-size-control input[type="range"] { width:clamp(80px,30vw,132px); min-width:70px; height:22px; margin:0; accent-color:var(--cyan); cursor:pointer; touch-action:pan-x; }
+    .button-size-control output { width:36px; text-align:right; font-variant-numeric:tabular-nums; }
     .effects-off .scanlines, .effects-off .grid-overlay { opacity: 0; }
     .camera-error { color: var(--red) !important; }
     .hud-btn.recording { color: #fff; background: rgba(255,65,91,.9); border-color: #ff647c; box-shadow: 0 0 18px rgba(255,65,91,.38); animation: record-pulse 1.2s ease-in-out infinite; }
@@ -123,7 +128,7 @@
       .panel-bottom-left { left: 22px; }
       .bottom-readout { right: 22px; }
       .controls { max-width: calc(100vw - 60px); }
-      .hud-btn { padding: 0 10px; }
+      .hud-btn { padding: 0 var(--hud-btn-pad,10px); }
     }
     @media (max-width: 700px) {
       .corner { width: 33px; height: 33px; }
@@ -144,8 +149,8 @@
       .target-name { font-size: 8px; } .target-score { font-size: 8px; }
       .log-list { max-height: 72px; } .log-row { grid-template-columns: 40px 1fr; font-size: 8px; }
       .bottom-readout { display: none; }
-      .controls { left: 12px; right: 12px; bottom: 17px; transform: none; width: auto; max-width: none; gap: 6px; }
-      .hud-btn { flex: 1 1 28%; min-height: 35px; padding: 0 4px; font-size: 8px; letter-spacing: .04em; }
+      .controls { left: 12px; right: 12px; bottom: 17px; transform: none; width: auto; max-width: none; gap: var(--hud-control-gap,6px); }
+      .hud-btn { flex: 1 1 var(--hud-btn-basis,28%); min-height: var(--hud-btn-height,35px); padding: 0 var(--hud-btn-pad,4px); font-size: var(--hud-btn-font,8px); letter-spacing: var(--hud-btn-letter,.04em); }
     }
     @media (max-width: 390px) {
       .panel-left { width: 145px; left: 9px; } .panel-right { width: 148px; right: 9px; }
@@ -223,6 +228,12 @@
       <button class="hud-btn" id="reset-btn" type="button" title="HUDを再起動">REBOOT</button>
     </nav>
 
+    <section id="button-size-control" class="button-size-control" aria-label="ボタンサイズ調整">
+      <label for="button-size-slider">BTN SIZE</label>
+      <input id="button-size-slider" type="range" min="60" max="120" step="5" value="80" aria-label="ボタンサイズ 60から120パーセント">
+      <output id="button-size-value" for="button-size-slider">80%</output>
+    </section>
+
     <div id="toast" class="toast" role="status"></div>
 
     <section id="boot-screen" class="boot-screen" aria-label="起動シーケンス">
@@ -256,7 +267,8 @@
       fullBtn: $('fullscreen-btn'), resetBtn: $('reset-btn'), boot: $('boot-screen'), bootLog: $('boot-log'),
       bootStage: $('boot-stage'), bootPercent: $('boot-percent'), bootBar: $('boot-bar'), skipBoot: $('skip-boot'), toast: $('toast'),
       gazeState: $('gaze-state'), motionState: $('motion-state'), recordState: $('record-state'),
-      gazeBtn: $('gaze-btn'), gazeCalBtn: $('gaze-cal-btn'), predictBtn: $('predict-btn'), holoBtn: $('holo-btn'), recordBtn: $('record-btn')
+      gazeBtn: $('gaze-btn'), gazeCalBtn: $('gaze-cal-btn'), predictBtn: $('predict-btn'), holoBtn: $('holo-btn'), recordBtn: $('record-btn'),
+      buttonSizeControl: $('button-size-control'), buttonSizeSlider: $('button-size-slider'), buttonSizeValue: $('button-size-value')
     };
 
     function detectMobileDevice() {
@@ -280,6 +292,15 @@
     let recording = false, recordingStartedAt = null, recordingStartedPerf = 0, trackingRecords = [], lastRecordAt = 0;
     let voiceOn = false, effectsOn = true, hudAngle = 0, fpsFrames = 0, lastFpsAt = performance.now();
     let assistantMode = 'JARVIS', cameraDeviceId = '', filterMode = 0;
+    const compactViewport = () => window.matchMedia('(max-width: 700px)').matches;
+    const buttonSizeStorageKey = () => compactViewport() ? 'taiyaki_hud_button_size_mobile_v1' : 'taiyaki_hud_button_size_desktop_v1';
+    function clampButtonSize(value) { return Math.max(60, Math.min(120, Math.round(Number(value) / 5) * 5)); }
+    function readButtonSize(key, fallback) {
+      try { const value = Number.parseInt(localStorage.getItem(key) || '', 10); return Number.isFinite(value) ? clampButtonSize(value) : fallback; }
+      catch (_) { return fallback; }
+    }
+    let activeButtonSizeKey = buttonSizeStorageKey();
+    let buttonSize = readButtonSize(activeButtonSizeKey, compactViewport() ? 80 : 100);
     let faceProfiles = loadFaceProfiles(), identityByIndex = [];
     let lastGoodFacesAt = 0, lastGoodPredictions = [];
     let toastTimer = null, lastSpokenAt = 0, bootStart = performance.now(), bootHidden = false, initStarted = false;
@@ -329,6 +350,37 @@
       } catch (error) { console.warn('Speech synthesis error', error); }
     }
 
+    function positionButtonSizeControl() {
+      if (!ui.buttonSizeControl) return;
+      const controls = document.querySelector('.controls');
+      if (!controls) return;
+      const rect = controls.getBoundingClientRect();
+      ui.buttonSizeControl.style.bottom = `${Math.max(10, window.innerHeight - rect.top + 8)}px`;
+      ui.buttonSizeControl.style.visibility = 'visible';
+    }
+    function applyButtonSize(value = buttonSize, save = true) {
+      buttonSize = clampButtonSize(value);
+      const compact = compactViewport();
+      const scale = buttonSize / 100;
+      const baseHeight = compact ? 35 : 39;
+      const baseFont = compact ? 8 : 10;
+      const basePadding = compact ? 4 : 13;
+      const baseGap = compact ? 6 : 8;
+      const root = document.documentElement;
+      root.style.setProperty('--hud-btn-height', `${Math.max(compact ? 22 : 28, Math.round(baseHeight * scale))}px`);
+      root.style.setProperty('--hud-btn-font', `${Math.max(compact ? 6 : 8, Number((baseFont * scale).toFixed(1)))}px`);
+      root.style.setProperty('--hud-btn-pad', `${Math.max(compact ? 1 : 3, Math.round(basePadding * scale))}px`);
+      root.style.setProperty('--hud-btn-letter', `${(compact ? .04 : .12) * scale}em`);
+      root.style.setProperty('--hud-control-gap', `${Math.max(2, Math.round(baseGap * scale))}px`);
+      root.style.setProperty('--hud-btn-basis', compact ? `${Math.max(18, Math.min(45, 28 * scale)).toFixed(1)}%` : 'auto');
+      root.style.setProperty('--hud-select-height', `${Math.max(compact ? 22 : 28, Math.round(baseHeight * scale))}px`);
+      root.style.setProperty('--hud-select-font', `${Math.max(compact ? 6 : 8, Number((baseFont * scale).toFixed(1)))}px`);
+      root.style.setProperty('--hud-select-pad', `${Math.max(2, Math.round(8 * scale))}px`);
+      ui.buttonSizeSlider.value = String(buttonSize);
+      ui.buttonSizeValue.textContent = `${buttonSize}%`;
+      if (save) { try { localStorage.setItem(activeButtonSizeKey, String(buttonSize)); } catch (_) {} }
+      requestAnimationFrame(positionButtonSizeControl);
+    }
     function resizeCanvas() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.max(1, Math.round(screenW() * dpr));
@@ -336,8 +388,18 @@
       canvas.style.width = `${screenW()}px`; canvas.style.height = `${screenH()}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      const nextKey = buttonSizeStorageKey();
+      if (nextKey !== activeButtonSizeKey) {
+        activeButtonSizeKey = nextKey;
+        buttonSize = readButtonSize(activeButtonSizeKey, compactViewport() ? 80 : 100);
+        applyButtonSize(buttonSize, false);
+      } else positionButtonSizeControl();
+    });
     resizeCanvas();
+    applyButtonSize(buttonSize, false);
+    ui.buttonSizeSlider.addEventListener('input', () => applyButtonSize(ui.buttonSizeSlider.value));
 
     function addBootLine(message, active = false) {
       bootLines.push({ message, active });
@@ -1056,7 +1118,7 @@
         if (!document.fullscreenElement) await $('container').requestFullscreen(); else await document.exitFullscreen();
       } catch (error) { notify('FULLSCREEN NOT AVAILABLE'); }
     });
-    document.addEventListener('fullscreenchange', () => { ui.fullBtn.textContent = document.fullscreenElement ? 'EXIT FULLSCREEN' : 'FULLSCREEN'; resizeCanvas(); });
+    document.addEventListener('fullscreenchange', () => { ui.fullBtn.textContent = document.fullscreenElement ? 'EXIT FULLSCREEN' : 'FULLSCREEN'; resizeCanvas(); requestAnimationFrame(positionButtonSizeControl); });
     ui.resetBtn.addEventListener('click', () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); location.reload(); });
 
     async function initialize() {
