@@ -36,29 +36,30 @@
     .scanlines { position: absolute; inset: 0; z-index: 8; pointer-events: none; background: linear-gradient(transparent 50%, rgba(0,0,0,.18) 50%); background-size: 100% 4px; opacity: .36; }
     .vignette { position: absolute; inset: 0; z-index: 7; pointer-events: none; box-shadow: inset 0 0 130px rgba(0,0,0,.92), inset 0 0 45px rgba(54,239,255,.13); }
     .hud { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-    .corner { position: absolute; width: 65px; height: 65px; border-color: var(--cyan); border-style: solid; filter: drop-shadow(0 0 7px var(--cyan)); opacity: .85; }
+    .corner { position: absolute; width: 65px; height: 65px; border-color: var(--cyan); border-style: solid; filter: drop-shadow(0 0 7px var(--cyan)); opacity: .85; transform: scale(var(--hud-scale, 1)); }
+    .c-tl { transform-origin: top left; } .c-tr { transform-origin: top right; } .c-bl { transform-origin: bottom left; } .c-br { transform-origin: bottom right; }
     .c-tl { top: 18px; left: 18px; border-width: 2px 0 0 2px; }
     .c-tr { top: 18px; right: 18px; border-width: 2px 2px 0 0; }
     .c-bl { bottom: 18px; left: 18px; border-width: 0 0 2px 2px; }
     .c-br { bottom: 18px; right: 18px; border-width: 0 2px 2px 0; }
     .topbar { position: absolute; left: 102px; right: 102px; top: 23px; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; text-shadow: 0 0 12px rgba(54,239,255,.55); }
-    .brand { display: flex; gap: 13px; align-items: center; min-width: 0; }
+    .brand { display: flex; gap: 13px; align-items: center; min-width: 0; transform: scale(var(--hud-scale, 1)); transform-origin: top left; }
     .brand-mark { position: relative; flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid var(--cyan); border-radius: 50%; box-shadow: 0 0 15px var(--cyan-soft), inset 0 0 12px var(--cyan-soft); }
     .brand-mark::before, .brand-mark::after { content: ""; position: absolute; border: 1px solid var(--cyan); border-radius: 50%; inset: 7px; }
     .brand-mark::after { inset: 15px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
     .brand h1 { font-size: clamp(14px, 1.4vw, 20px); line-height: 1.15; letter-spacing: .24em; color: #dbfdff; font-weight: 600; }
     .brand .sub { margin-top: 5px; font-family: var(--mono); letter-spacing: .17em; color: var(--muted); font-size: 10px; }
-    .top-right { text-align: right; font: 11px/1.9 var(--mono); letter-spacing: .12em; color: #8bdce4; }
+    .top-right { text-align: right; font: 11px/1.9 var(--mono); letter-spacing: .12em; color: #8bdce4; transform: scale(var(--hud-scale, 1)); transform-origin: top right; }
     .status-line { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
     .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 9px currentColor; }
     .status-dot.online { background: #65ffad; color: #65ffad; }
     .status-dot.warning { background: var(--amber); color: var(--amber); }
     .status-dot.error { background: var(--red); color: var(--red); }
-    .panel { position: absolute; width: 238px; padding: 14px 15px; background: linear-gradient(135deg, rgba(4,28,43,.86), rgba(1,10,19,.69)); border: 1px solid var(--line); clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%); box-shadow: inset 0 0 22px rgba(54,239,255,.035), 0 0 18px rgba(0,0,0,.2); pointer-events: auto; backdrop-filter: blur(7px); }
+    .panel { position: absolute; width: 238px; padding: 14px 15px; background: linear-gradient(135deg, rgba(4,28,43,.86), rgba(1,10,19,.69)); border: 1px solid var(--line); clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%); box-shadow: inset 0 0 22px rgba(54,239,255,.035), 0 0 18px rgba(0,0,0,.2); pointer-events: auto; backdrop-filter: blur(7px); transform: scale(var(--hud-scale, 1)); }
     .panel::before { content: ""; position: absolute; top: 0; left: 0; width: 38px; height: 2px; background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
-    .panel-left { left: 35px; top: 128px; }
-    .panel-right { right: 35px; top: 128px; width: 262px; }
-    .panel-bottom-left { left: 35px; bottom: 104px; width: 238px; }
+    .panel-left { left: 35px; top: 128px; transform-origin: top left; }
+    .panel-right { right: 35px; top: 128px; width: 262px; transform-origin: top right; }
+    .panel-bottom-left { left: 35px; bottom: 104px; width: 238px; transform-origin: bottom left; }
     .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 6px; font: 10px/1.5 var(--mono); letter-spacing: .18em; color: var(--cyan); padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(54,239,255,.2); }
     .micro { font: 9px var(--mono); color: var(--muted); letter-spacing: .08em; }
     .metric { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 8px 0; font: 11px var(--mono); color: #8cbbc4; }
@@ -81,12 +82,12 @@
     .log-row .log-time { color: #388b98; }
     .log-row.warn .log-message { color: var(--amber); }
     .log-row.error .log-message { color: var(--red); }
-    .controls { position: absolute; z-index: 10; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; flex-wrap: wrap; gap: var(--hud-control-gap,8px); width: max-content; max-width: calc(100vw - 100px); pointer-events: auto; }
+    .controls { position: absolute; z-index: 10; bottom: 26px; left: 50%; transform: translateX(-50%) scale(var(--hud-scale, 1)); transform-origin: center bottom; display: flex; justify-content: center; flex-wrap: wrap; gap: var(--hud-control-gap,8px); width: max-content; max-width: calc(100vw - 100px); pointer-events: auto; }
     .hud-btn { min-width: 0; min-height: var(--hud-btn-height,39px); padding: 0 var(--hud-btn-pad,13px); color: var(--cyan); background: rgba(3,22,34,.9); border: 1px solid rgba(54,239,255,.54); cursor: pointer; font-family: var(--mono); font-size: var(--hud-btn-font,10px); letter-spacing: var(--hud-btn-letter,.12em); box-shadow: 0 0 12px rgba(54,239,255,.06); transition: .18s; }
     .hud-btn:hover, .hud-btn.active { color: #021018; background: var(--cyan); box-shadow: 0 0 17px rgba(54,239,255,.5); }
     .hud-btn.warn { border-color: rgba(255,209,102,.7); color: var(--amber); }
     .hud-btn:focus-visible, .target-row:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    .bottom-readout { position: absolute; right: 35px; bottom: 98px; color: rgba(92,178,187,.73); font: 9px/1.8 var(--mono); text-align: right; letter-spacing: .14em; }
+    .bottom-readout { position: absolute; right: 35px; bottom: 98px; color: rgba(92,178,187,.73); font: 9px/1.8 var(--mono); text-align: right; letter-spacing: .14em; transform: scale(var(--hud-scale, 1)); transform-origin: bottom right; }
     .bottom-readout strong { color: #a6f9ff; font-weight: 400; }
     .boot-screen { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(3,29,43,.97), rgba(1,5,12,.985) 70%); transition: opacity .8s ease, visibility .8s ease; }
     .boot-screen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -149,7 +150,7 @@
       .target-name { font-size: 8px; } .target-score { font-size: 8px; }
       .log-list { max-height: 72px; } .log-row { grid-template-columns: 40px 1fr; font-size: 8px; }
       .bottom-readout { display: none; }
-      .controls { left: 12px; right: 12px; bottom: 17px; transform: none; width: auto; max-width: none; gap: var(--hud-control-gap,6px); }
+      .controls { left: 12px; right: 12px; bottom: 17px; transform: scale(var(--hud-scale, 1)); transform-origin: center bottom; width: auto; max-width: none; gap: var(--hud-control-gap,6px); }
       .hud-btn { flex: 1 1 var(--hud-btn-basis,28%); min-height: var(--hud-btn-height,35px); padding: 0 var(--hud-btn-pad,4px); font-size: var(--hud-btn-font,8px); letter-spacing: var(--hud-btn-letter,.04em); }
     }
     @media (max-width: 390px) {
@@ -228,9 +229,9 @@
       <button class="hud-btn" id="reset-btn" type="button" title="HUDを再起動">REBOOT</button>
     </nav>
 
-    <section id="button-size-control" class="button-size-control" aria-label="ボタンサイズ調整">
-      <label for="button-size-slider">BTN SIZE</label>
-      <input id="button-size-slider" type="range" min="5" max="120" step="5" value="80" aria-label="ボタンサイズ 5から120パーセント">
+    <section id="button-size-control" class="button-size-control" aria-label="HUD全体のサイズ調整">
+      <label for="button-size-slider">HUD SIZE</label>
+      <input id="button-size-slider" type="range" min="5" max="120" step="5" value="80" aria-label="HUD全体のサイズ 5から120パーセント">
       <output id="button-size-value" for="button-size-slider">80%</output>
     </section>
 
@@ -293,7 +294,7 @@
     let voiceOn = false, effectsOn = true, hudAngle = 0, fpsFrames = 0, lastFpsAt = performance.now();
     let assistantMode = 'JARVIS', cameraDeviceId = '', filterMode = 0;
     const compactViewport = () => window.matchMedia('(max-width: 700px)').matches;
-    const buttonSizeStorageKey = () => compactViewport() ? 'taiyaki_hud_button_size_mobile_v1' : 'taiyaki_hud_button_size_desktop_v1';
+    const buttonSizeStorageKey = () => compactViewport() ? 'taiyaki_hud_overall_size_mobile_v1' : 'taiyaki_hud_overall_size_desktop_v1';
     function clampButtonSize(value) { return Math.max(5, Math.min(120, Math.round(Number(value) / 5) * 5)); }
     function readButtonSize(key, fallback) {
       try { const value = Number.parseInt(localStorage.getItem(key) || '', 10); return Number.isFinite(value) ? clampButtonSize(value) : fallback; }
@@ -360,26 +361,13 @@
     }
     function applyButtonSize(value = buttonSize, save = true) {
       buttonSize = clampButtonSize(value);
-      const compact = compactViewport();
-      const scale = buttonSize / 100;
-      const baseHeight = compact ? 35 : 39;
-      const baseFont = compact ? 8 : 10;
-      const basePadding = compact ? 4 : 13;
-      const baseGap = compact ? 6 : 8;
       const root = document.documentElement;
-      root.style.setProperty('--hud-btn-height', `${Math.max(compact ? 22 : 28, Math.round(baseHeight * scale))}px`);
-      root.style.setProperty('--hud-btn-font', `${Math.max(compact ? 6 : 8, Number((baseFont * scale).toFixed(1)))}px`);
-      root.style.setProperty('--hud-btn-pad', `${Math.max(compact ? 1 : 3, Math.round(basePadding * scale))}px`);
-      root.style.setProperty('--hud-btn-letter', `${(compact ? .04 : .12) * scale}em`);
-      root.style.setProperty('--hud-control-gap', `${Math.max(2, Math.round(baseGap * scale))}px`);
-      root.style.setProperty('--hud-btn-basis', compact ? `${Math.max(18, Math.min(45, 28 * scale)).toFixed(1)}%` : 'auto');
-      root.style.setProperty('--hud-select-height', `${Math.max(compact ? 22 : 28, Math.round(baseHeight * scale))}px`);
-      root.style.setProperty('--hud-select-font', `${Math.max(compact ? 6 : 8, Number((baseFont * scale).toFixed(1)))}px`);
-      root.style.setProperty('--hud-select-pad', `${Math.max(2, Math.round(8 * scale))}px`);
+      // Resize interface elements around their own anchors so their pinned screen positions stay fixed.
+      root.style.setProperty('--hud-scale', (buttonSize / 100).toFixed(2));
       ui.buttonSizeSlider.value = String(buttonSize);
       ui.buttonSizeValue.textContent = `${buttonSize}%`;
       if (save) { try { localStorage.setItem(activeButtonSizeKey, String(buttonSize)); } catch (_) {} }
-      requestAnimationFrame(positionButtonSizeControl);
+      // Keep the size slider exactly where it was; only the HUD visuals change size.
     }
     function resizeCanvas() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -395,10 +383,12 @@
         activeButtonSizeKey = nextKey;
         buttonSize = readButtonSize(activeButtonSizeKey, compactViewport() ? 80 : 100);
         applyButtonSize(buttonSize, false);
+        requestAnimationFrame(positionButtonSizeControl);
       } else positionButtonSizeControl();
     });
     resizeCanvas();
     applyButtonSize(buttonSize, false);
+    requestAnimationFrame(positionButtonSizeControl);
     ui.buttonSizeSlider.addEventListener('input', () => applyButtonSize(ui.buttonSizeSlider.value));
 
     function addBootLine(message, active = false) {
@@ -761,7 +751,18 @@
     function drawHologramFace(face, selected) {
       if (!hologramEnabled || !effectsOn || !face?.landmarks) return;
       const lm = face.landmarks;
+      // Scale the mesh around its own landmark centroid: the face stays in place.
+      let centerX = 0, centerY = 0, centerCount = 0;
+      for (const point of lm) {
+        if (!point) continue;
+        const screenPoint = videoPointToScreen(point);
+        centerX += screenPoint.x; centerY += screenPoint.y; centerCount++;
+      }
+      if (centerCount) { centerX /= centerCount; centerY /= centerCount; }
+      else { centerX = screenW() / 2; centerY = screenH() / 2; }
+      const visualScale = Math.max(.05, buttonSize / 100);
       ctx.save();
+      ctx.translate(centerX, centerY); ctx.scale(visualScale, visualScale); ctx.translate(-centerX, -centerY);
       ctx.lineWidth = selected ? 1.1 : .65;
       const centerLocked = selected && locked && isLockedTargetCentered();
       ctx.strokeStyle = centerLocked ? 'rgba(255,35,35,.9)' : selected ? 'rgba(200,138,82,.75)' : 'rgba(200,138,82,.3)';
@@ -800,7 +801,9 @@
       const dy = clamp((activeGaze.y - gazeBaseline.y) / .15, -1, 1);
       const x = screenW() / 2 + dx * screenW() * .38;
       const y = screenH() / 2 + dy * screenH() * .30;
-      ctx.save(); ctx.strokeStyle = 'rgba(255,209,102,.85)'; ctx.fillStyle = 'rgba(255,209,102,.92)'; ctx.lineWidth = 1.2; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
+      const visualScale = Math.max(.05, buttonSize / 100);
+      ctx.save(); ctx.translate(x, y); ctx.scale(visualScale, visualScale); ctx.translate(-x, -y);
+      ctx.strokeStyle = 'rgba(255,209,102,.85)'; ctx.fillStyle = 'rgba(255,209,102,.92)'; ctx.lineWidth = 1.2; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
       const r = 10;
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x-r-7,y); ctx.lineTo(x-r+1,y); ctx.moveTo(x+r-1,y); ctx.lineTo(x+r+7,y); ctx.moveTo(x,y-r-7); ctx.lineTo(x,y-r+1); ctx.moveTo(x,y+r-1); ctx.lineTo(x,y+r+7); ctx.stroke();
@@ -811,7 +814,9 @@
     function drawMovementPrediction() {
       if (!predictionEnabled || !motionPrediction || !cameraOn) return;
       const p = motionPrediction, x = p.x, y = p.y, size = 17;
-      ctx.save(); ctx.strokeStyle = 'rgba(255,209,102,.92)'; ctx.fillStyle = 'rgba(255,209,102,.95)'; ctx.lineWidth = 1.5; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
+      const visualScale = Math.max(.05, buttonSize / 100);
+      ctx.save(); ctx.translate(x, y); ctx.scale(visualScale, visualScale); ctx.translate(-x, -y);
+      ctx.strokeStyle = 'rgba(255,209,102,.92)'; ctx.fillStyle = 'rgba(255,209,102,.95)'; ctx.lineWidth = 1.5; ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
       ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(p.fromX, p.fromY); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([]);
       ctx.beginPath(); ctx.arc(x, y, size * .75, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x-size,y-size/2); ctx.lineTo(x-size,y-size); ctx.lineTo(x-size/2,y-size); ctx.moveTo(x+size/2,y-size); ctx.lineTo(x+size,y-size); ctx.lineTo(x+size,y-size/2); ctx.moveTo(x+size,y+size/2); ctx.lineTo(x+size,y+size); ctx.lineTo(x+size/2,y+size); ctx.moveTo(x-size/2,y+size); ctx.lineTo(x-size,y+size); ctx.lineTo(x-size,y+size/2); ctx.stroke();
@@ -915,6 +920,9 @@
     function drawRadar(now) {
       const cx = screenW() / 2, cy = screenH() / 2;
       const radiusMax = Math.min(250, screenW() * .27, screenH() * .34);
+      // The radar scales around the screen center without moving that center.
+      const visualScale = Math.max(.05, buttonSize / 100);
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(visualScale, visualScale); ctx.translate(-cx, -cy);
       if (effectsOn) {
         ctx.save(); ctx.strokeStyle = 'rgba(54,239,255,.105)'; ctx.lineWidth = 1;
         for (let radius = 50; radius <= radiusMax; radius += 50) { ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke(); }
@@ -933,6 +941,7 @@
       ctx.moveTo(cx-gap-s,cy); ctx.lineTo(cx-gap,cy); ctx.moveTo(cx+gap,cy); ctx.lineTo(cx+gap+s,cy);
       ctx.moveTo(cx,cy-gap-s); ctx.lineTo(cx,cy-gap); ctx.moveTo(cx,cy+gap); ctx.lineTo(cx,cy+gap+s); ctx.stroke();
       ctx.restore();
+      ctx.restore();
     }
     function isLockedTargetCentered() {
       if(!locked || selectedIndex<0 || !detectedBoxes[selectedIndex]) return false;
@@ -947,7 +956,9 @@
       const centerLocked = isSelected && locked && isLockedTargetCentered();
       const color = centerLocked ? '#ff3030' : isSelected && locked ? '#ffd166' : isSelected ? '#e5fdff' : '#36efff';
       const corner = Math.max(8, Math.min(w, h) * .22);
-      ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = isSelected ? 2.5 : 1.6; ctx.shadowColor = color; ctx.shadowBlur = isSelected ? 13 : 7;
+      const visualScale = Math.max(.05, buttonSize / 100);
+      ctx.save(); ctx.translate(b.cx, b.cy); ctx.scale(visualScale, visualScale); ctx.translate(-b.cx, -b.cy);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = isSelected ? 2.5 : 1.6; ctx.shadowColor = color; ctx.shadowBlur = isSelected ? 13 : 7;
       ctx.beginPath();
       ctx.moveTo(x,y+corner); ctx.lineTo(x,y); ctx.lineTo(x+corner,y);
       ctx.moveTo(x+w-corner,y); ctx.lineTo(x+w,y); ctx.lineTo(x+w,y+corner);
@@ -999,7 +1010,8 @@
 
     canvas.addEventListener('click', (event) => {
       if (!predictions.length || !cameraOn) return;
-      const x = event.clientX, y = event.clientY;
+      const x = event.clientX;
+      const y = event.clientY;
       let chosen = -1, best = Infinity;
       detectedBoxes.forEach((b, index) => {
         const pad = 28;
