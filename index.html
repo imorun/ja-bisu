@@ -160,16 +160,9 @@
       .brand .sub { font-size: 7px; }
     }
 
-    /* Persistent switch for hiding the HUD bars/panels without disabling face tracking. */
-    .bar-toggle { position:fixed; z-index:100; top:12px; right:12px; min-width:82px; padding:7px 9px; color:var(--cyan); background:rgba(2,17,29,.94); border:1px solid var(--line); box-shadow:0 0 12px var(--cyan-soft); backdrop-filter:blur(7px); font:9px var(--mono); letter-spacing:.07em; cursor:pointer; pointer-events:auto; }
-    body.taiyaki .bar-toggle { color:var(--cyan); background:rgba(31,19,12,.96); }
-    .bar-toggle:hover, .bar-toggle:focus-visible { outline:1px solid var(--cyan); box-shadow:0 0 18px var(--cyan-soft); }
-    body.bars-hidden .hud .topbar,
-    body.bars-hidden .hud .panel,
-    body.bars-hidden .hud .bottom-readout,
-    body.bars-hidden .controls,
-    body.bars-hidden .button-size-control { display:none !important; }
-    @media (max-width:700px) { .bar-toggle { top:70px; right:8px; min-width:74px; padding:6px 7px; font-size:8px; } }
+    /* Hide only the top status bar. Panels, face highlighting, and bottom controls remain visible. */
+    .bar-toggle { white-space:nowrap; }
+    body.bars-hidden .hud .topbar { display:none !important; }
 
   </style>
   <!-- A single MediaPipe runtime handles face landmarks and iris estimation. -->
@@ -239,6 +232,7 @@
       <button class="hud-btn" id="record-btn" type="button" title="顔位置・視線・移動データの記録開始／保存">RECORD: OFF</button>
       <button class="hud-btn" id="fullscreen-btn" type="button" title="全画面表示">FULLSCREEN</button>
       <button class="hud-btn" id="reset-btn" type="button" title="HUDを再起動">REBOOT</button>
+      <button id="bars-toggle-btn" class="hud-btn bar-toggle" type="button" aria-pressed="false" title="上部バーを非表示">HIDE BAR</button>
     </nav>
 
     <section id="button-size-control" class="button-size-control" aria-label="HUD全体のサイズ調整">
@@ -247,7 +241,6 @@
       <output id="button-size-value" for="button-size-slider">80%</output>
     </section>
 
-    <button id="bars-toggle-btn" class="bar-toggle" type="button" aria-pressed="false" title="HUDのバー類を非表示">HIDE BARS</button>
 
     <div id="toast" class="toast" role="status"></div>
 
@@ -407,9 +400,9 @@
 
     function setBarsHidden(hidden) {
       document.body.classList.toggle('bars-hidden', hidden);
-      ui.barsToggleBtn.textContent = hidden ? 'SHOW BARS' : 'HIDE BARS';
+      ui.barsToggleBtn.textContent = hidden ? 'SHOW BAR' : 'HIDE BAR';
       ui.barsToggleBtn.setAttribute('aria-pressed', String(hidden));
-      ui.barsToggleBtn.title = hidden ? 'HUDのバー類を再表示' : 'HUDのバー類を非表示';
+      ui.barsToggleBtn.title = hidden ? '上部バーを再表示' : '上部バーを非表示';
       if (!hidden) requestAnimationFrame(positionButtonSizeControl);
     }
     ui.barsToggleBtn.addEventListener('click', () => {
