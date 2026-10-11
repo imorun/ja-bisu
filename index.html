@@ -214,8 +214,15 @@
       <div class="bottom-readout">STARK SYSTEMS / LOCAL VISION MODULE<br><strong id="engine-state">BLAZEFACE // FACE DETECTION</strong><br>GAZE <strong id="gaze-state">WAITING FOR FACE</strong><br>MOTION <strong id="motion-state">STANDBY</strong><br>RECORD <strong id="record-state">OFF</strong><br>LOCAL PROCESSING // FACE PROFILES STORED IN THIS BROWSER</div>
     </section>
 
+    <section id="button-size-control" class="button-size-control" aria-label="HUD全体のサイズ調整">
+      <label for="button-size-slider">HUD SIZE</label>
+      <input id="button-size-slider" type="range" min="5" max="120" step="5" value="80" aria-label="HUD全体のサイズ 5から120パーセント">
+      <output id="button-size-value" for="button-size-slider">80%</output>
+    </section>
+
     <nav class="controls" aria-label="操作">
       <button class="hud-btn" id="mode-btn" type="button" title="JARVIS / T.A.I.Y.K.I. 切替">MODE: JARVIS</button>
+      <button id="bars-toggle-btn" class="hud-btn bar-toggle" type="button" aria-pressed="false" title="上部バーを非表示">HIDE BAR</button>
       <select class="hud-select" id="camera-select" aria-label="カメラ選択" title="カメラ切り替え"><option value="">CAMERA INPUT</option></select>
       <button class="hud-btn" id="voice-btn" type="button" title="音声アナウンス切替">VOICE: OFF</button>
       <button class="hud-btn" id="lock-btn" type="button" title="選択した顔をロック">LOCK TARGET</button>
@@ -232,15 +239,7 @@
       <button class="hud-btn" id="record-btn" type="button" title="顔位置・視線・移動データの記録開始／保存">RECORD: OFF</button>
       <button class="hud-btn" id="fullscreen-btn" type="button" title="全画面表示">FULLSCREEN</button>
       <button class="hud-btn" id="reset-btn" type="button" title="HUDを再起動">REBOOT</button>
-      <button id="bars-toggle-btn" class="hud-btn bar-toggle" type="button" aria-pressed="false" title="上部バーを非表示">HIDE BAR</button>
     </nav>
-
-    <section id="button-size-control" class="button-size-control" aria-label="HUD全体のサイズ調整">
-      <label for="button-size-slider">HUD SIZE</label>
-      <input id="button-size-slider" type="range" min="5" max="120" step="5" value="80" aria-label="HUD全体のサイズ 5から120パーセント">
-      <output id="button-size-value" for="button-size-slider">80%</output>
-    </section>
-
 
     <div id="toast" class="toast" role="status"></div>
 
